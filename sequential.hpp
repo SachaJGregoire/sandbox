@@ -1,0 +1,5 @@
+#ifndef SEQUENTIAL_HPP
+#define SEQUENTIAL_HPP
+
+
+#endif // SEQUENTIAL_HPP
