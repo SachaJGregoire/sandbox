@@ -1,6 +1,4 @@
-#include <iostream>
-
-#include "sequential.cpp"
+#include "grid.hpp"
 
 using namespace std;
 
