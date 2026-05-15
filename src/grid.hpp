@@ -26,8 +26,7 @@ enum class ParticleType {
 
 class Particle {
 public:
-	Particle() : air(1) {}
-    Particle(bool air = 0, bool moveable = 0, double topple_prob = 0) :
+    Particle(bool air = 1, bool moveable = 0, double topple_prob = 0) :
         air(air), moveable(moveable), topple_prob(topple_prob) {}
     bool air = 0;
     bool moveable = 0;
