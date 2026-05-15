@@ -14,10 +14,10 @@ void Grid::update_marg2() {
 				if (pBR.air) swap(x + 1, y, x + 1, y + 1);
 			} else if (pTL.moveable) {
 				if (pBL.air) swap(x, y, x, y + 1);
-				else if (pBR.air && topple(pTL.topple_prob)) swap(x, y, x + 1, y + 1);
+				else if (pTR.air && pBR.air && topple(pTL.topple_prob)) swap(x, y, x + 1, y + 1);
 			} else if (pTR.moveable) {
 				if (pBR.air) swap(x + 1, y, x + 1, y + 1);
-				else if (pBL.air && topple(pTR.topple_prob)) swap(x + 1, y, x, y + 1);
+				else if (pTL.air && pBL.air && topple(pTR.topple_prob)) swap(x + 1, y, x, y + 1);
 			}
 		}
 	}
