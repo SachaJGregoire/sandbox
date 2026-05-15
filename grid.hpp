@@ -25,23 +25,27 @@ enum class ParticleType {
 };
 
 class Particle {
+public:
 	Particle() : air(1) {}
-    Particle(bool air, bool moveable) : air(air), moveable(moveable) {}
+    Particle(bool air = 0, bool moveable = 0, double topple_prob = 0) :
+        air(air), moveable(moveable), topple_prob(topple_prob) {}
     bool air = 0;
     bool moveable = 0;
+    double topple_prob = 0;
     bool on_air = 0; // TODO: Just for computation purposes?
 };
 
 class Grid {
 	/*
-	(0,0) is bottom left
+	(0,0) is top left
 	cells[x][y] -> first coordinate is x, second coordinate is y : 1. width, 2. height 
 	*/
 
 private:
     size_t width, height;
     std::vector<Particle> cells;
-    int margOffset = 0;
+    int margolus_offset = 0;
+    double topple_counter = 0;    // Simulate topple probability
 
 public:
     Grid() : Grid(80, 100) {}
@@ -49,6 +53,17 @@ public:
 
     Particle get(size_t x, size_t y) const { return cells[x + width * y]; }
     void set(size_t x, size_t y, const Particle& value) { cells[x + width * y] = value; }
+    void swap(size_t x1, size_t y1, size_t x2, size_t y2) { std::swap(cells[x1 + width * y1], cells[x2 + width * y2]); }
+
+    bool topple(double topple_prob) {
+        // Simulate topple probability
+        topple_counter += topple_prob;
+        if (topple_counter >= 1) {
+            topple_counter -= 1;
+            return true;
+        }
+        return false;
+    }
 
     void update_seq();
     void update_marg2();
