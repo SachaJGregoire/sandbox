@@ -15,7 +15,7 @@ void Sandbox::_ready() {
     texture = ImageTexture::create_from_image(image);
     set_texture(texture);
 
-    grid.set(40, 10, Particle(false, true, 0.5));
+    grid.set(40, 10, Particle(false, true, 0.5, ParticleType::Sand)); // check if ParticleType::Sand works
 }
 
 void Sandbox::_process(double delta) {

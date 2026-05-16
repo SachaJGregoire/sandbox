@@ -15,6 +15,7 @@
 #include <string>
 #include <limits>
 #include <vector>
+#include <random>
 
 // TODO: Maybe do something with this later
 enum class ParticleType {
@@ -26,12 +27,15 @@ enum class ParticleType {
 
 class Particle {
 public:
-    Particle(bool air = 1, bool moveable = 0, double topple_prob = 0) :
-        air(air), moveable(moveable), topple_prob(topple_prob) {}
+    Particle(bool air = 1, bool moveable = 0, double topple_prob = 0.0, ParticleType type = ParticleType::Empty) :
+        air(air), moveable(moveable), topple_prob(topple_prob), type(type) {}
     bool air = 0;
     bool moveable = 0;
     double topple_prob = 0;
+    ParticleType type = ParticleType::Empty; // idk if this works like this
     bool on_air = 0; // TODO: Just for computation purposes?
+
+    static Particle Sand() { return Particle(false, true, 0.5, ParticleType::Sand); }
 };
 
 class Grid {
@@ -62,6 +66,16 @@ public:
             return true;
         }
         return false;
+    }
+
+    // check if the square is a valid square and then if it is an air particle
+    bool check_valid(size_t x, size_t y, bool check_if_water = false) {
+        if(!(x >= 0 && x < width) || !(y >= 0 && y < height)) return false;
+        Particle check = get(x,y);
+        
+        if(check_if_water) return check.type == ParticleType::Water;
+
+        return check.air;
     }
 
     void update_seq();
