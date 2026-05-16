@@ -10,11 +10,11 @@ void Grid::update_seq() {
 				else {
 					bool left = check_valid(x - 1, y + 1), right = check_valid(x + 1, y + 1);
 					if(left && right) {
-						if(rand() % 2 == 0) swap(x, y, x - 1, y + 1) // left
-						else swap(x, y, x + 1, y + 1) // right
+						if(rand() % 2 == 0) swap(x, y, x - 1, y + 1); // left
+						else swap(x, y, x + 1, y + 1); // right
 					} 
-					else if(left) swap(x, y, x - 1, y + 1) // left
-					else if(right) swap(x, y, x + 1, y + 1) // right
+					else if(left) swap(x, y, x - 1, y + 1); // left
+					else if(right) swap(x, y, x + 1, y + 1); // right
 				}
 			}
 			else if(cur.type == ParticleType::Water) {
@@ -22,11 +22,11 @@ void Grid::update_seq() {
 				else {
 					bool left = check_valid(x - 1, y), right = check_valid(x + 1, y);
 					if(left && right) {
-						if(rand() % 2 == 0) swap(x, y, x - 1, y) // left
-						else swap(x, y, x + 1, y) // right
+						if(rand() % 2 == 0) swap(x, y, x - 1, y); // left
+						else swap(x, y, x + 1, y); // right
 					} 
-					else if(left) swap(x, y, x - 1, y) // left
-					else if(right) swap(x, y, x + 1, y) // right
+					else if(left) swap(x, y, x - 1, y); // left
+					else if(right) swap(x, y, x + 1, y); // right
 				}
 			}
 		}
