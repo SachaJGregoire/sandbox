@@ -36,6 +36,7 @@ public:
     bool on_air = 0; // TODO: Just for computation purposes?
 
     static Particle Sand() { return Particle(false, true, 0.5, ParticleType::Sand); }
+    static Particle Water() { return Particle(false, true, 1.0, ParticleType::Water); }
 };
 
 class Grid {
@@ -73,7 +74,7 @@ public:
         if(!(x >= 0 && x < width) || !(y >= 0 && y < height)) return false;
         Particle check = get(x,y);
         
-        if(check_if_water) return check.type == ParticleType::Water;
+        if(check_if_water) return check.type == ParticleType::Water || check.air;
 
         return check.air;
     }
@@ -81,7 +82,7 @@ public:
     void update_seq();
     void update_marg2();
     void update_marg3(); // TODO: hehehehe
-    void update() { update_marg2(); };
+    void update() { update_seq(); };
 };
 
 #endif // SEQUENTIAL_HPP

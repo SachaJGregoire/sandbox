@@ -12,8 +12,8 @@ class Sandbox : public TextureRect {
     GDCLASS(Sandbox, TextureRect)
 
 private:
-    const int SANDBOX_WIDTH = 80;
-    const int SANDBOX_HEIGHT = 100;
+    const int SANDBOX_WIDTH = 600;
+    const int SANDBOX_HEIGHT = 300;
 
     Grid grid;
     Ref<Image> image;
