@@ -81,6 +81,7 @@ public:
     void update_seq();
     void update_marg2();
     void update_marg3(); // TODO: hehehehe
+    void update() { update_marg2(); };
 };
 
 #endif // SEQUENTIAL_HPP

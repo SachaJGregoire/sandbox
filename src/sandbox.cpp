@@ -19,7 +19,7 @@ void Sandbox::_ready() {
 }
 
 void Sandbox::_process(double delta) {
-    grid.update_seq(); 
+    grid.update();
 
     for (size_t y = 0; y < SANDBOX_HEIGHT; ++y) {
         for (size_t x = 0; x < SANDBOX_WIDTH; ++x) {
