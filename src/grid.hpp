@@ -48,11 +48,12 @@ class Grid {
 private:
     size_t width, height;
     std::vector<Particle> cells;
-    int margolus_offset = 0;
+    bool margolus_offset_X = 0;
+    bool margolus_offset_Y = 0;
     double topple_counter = 0;    // Simulate topple probability
 
 public:
-    Grid() : Grid(80, 100) {}
+    Grid() {}
     Grid(size_t w, size_t h) : width(w), height(h), cells(w*h) {}
 
     Particle get(size_t x, size_t y) const { return cells[x + width * y]; }
@@ -82,7 +83,7 @@ public:
     void update_seq();
     void update_marg2();
     void update_marg3(); // TODO: hehehehe
-    void update() { update_seq(); };
+    void update() { update_marg2(); };
 };
 
 #endif // SEQUENTIAL_HPP
