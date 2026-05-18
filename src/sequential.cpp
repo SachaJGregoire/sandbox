@@ -4,8 +4,8 @@ void Grid::update_seq() {
 	// Implement here oompa loompa
 	for(size_t x = 0; x < width; x++) {
 		for(size_t y = height; y-- > 0;) {
-			Particle cur = get(x,y);
-			if(cur.type == ParticleType::Sand) {
+			Mat cur = get(x,y);
+			if(prop(cur).state == State::Solid) {
 				if(check_valid(x, y + 1) || check_valid(x, y + 1, true)) swap(x, y, x, y + 1);
 				else {
 					bool left = check_valid(x - 1, y + 1, true), right = check_valid(x + 1, y + 1, true);
@@ -17,7 +17,7 @@ void Grid::update_seq() {
 					else if(right) swap(x, y, x + 1, y + 1); // right
 				}
 			}
-			else if(cur.type == ParticleType::Water) {
+			else if(prop(cur).state == State::Liquid) {
 				if(check_valid(x, y + 1)) swap(x, y, x, y + 1);
 				else {
 					bool left = check_valid(x - 1, y), right = check_valid(x + 1, y);
