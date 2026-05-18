@@ -8,29 +8,23 @@ void Grid::update_seq() {
 			if(prop(cur).state == State::Static) continue;
 
 			int dir_ver = (prop(cur).state == State::Gas) ? -1 : 1;
+			bool vert = check_valid(x, y, x, y + dir_ver);
+			bool left = check_valid(x, y, x - 1, y);
+			bool right = check_valid(x, y, x + 1, y);
+			bool diag_left = left && check_valid(x, y, x - 1, y + dir_ver);
+			bool diag_right = right && check_valid(x, y, x + 1, y + dir_ver);
 
-			if(check_valid(x, y, x, y + dir_ver))
-				swap(x, y, x, y + dir_ver); // vertical direction
-			else if(check_valid(x, y, x - 1, y + dir_ver) && check_valid(x, y, x - 1, y)) {
-				if(check_valid(x, y, x + 1, y + dir_ver) && check_valid(x, y, x + 1, y)) {
-					if(rand() % 2 == 0) swap(x, y, x - 1, y + dir_ver);
-					else swap(x, y, x + 1, y + dir_ver);
-				} // left diag and right diag free
+			if(vert) swap(x, y, x, y + dir_ver); // vertical direction
+			else if(diag_left) {
+				if (diag_right && topple(0.5)) swap(x, y, x + 1, y + dir_ver);
 				else swap(x, y, x - 1, y + dir_ver); // left diag only
-			}
-			else if(check_valid(x, y, x + 1, y + dir_ver) && check_valid(x, y, x + 1, y))
-				swap(x, y, x + 1, y + dir_ver); // right diag only
+			} else if(diag_right) swap(x, y, x + 1, y + dir_ver); // right diag only
 			// liquid logic
 			else if(prop(cur).state == State::Liquid || prop(cur).state == State::Gas) {
-				if(check_valid(x, y, x + 1, y)) {
-					if(check_valid(x, y, x - 1, y)) {
-						if(rand() % 2 == 0) swap(x, y, x - 1, y);
-						else swap(x, y, x + 1, y);
-					} // left and right free
-					else swap(x, y, x + 1, y); // right free
-				}
-				else if(check_valid(x, y, x - 1, y))
-					swap(x, y, x - 1, y); // left free
+				if(left) {
+					if(right && topple(0.5)) swap(x, y, x + 1, y); // left and right free
+					else swap(x, y, x - 1, y); // right free
+				} else if(right) swap(x, y, x + 1, y); // left free
 			}
 			
 			/*

@@ -53,9 +53,9 @@ public:
     // check if the square is a valid square
     bool check_valid(size_t x_cur, size_t y_cur, size_t x_next, size_t y_next) {
         if((x_next >= 0 && x_next < width) && (y_next >= 0 && y_next < height)) {
-            Mat cur = get(x_cur, y_cur), next = get(x_next, y_next);
-            if(cur.density > next.density) return true;
-            return false;
+            Mat cur = get(x_cur, y_cur);
+            Mat next = get(x_next, y_next);
+            return prop(cur).density > prop(next).density;
         }
         return false;
     }
