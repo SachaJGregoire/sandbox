@@ -50,14 +50,14 @@ public:
         return false;
     }
 
-    // check if the square is a valid square and then if it is an air particle
-    bool check_valid(size_t x, size_t y, bool check_if_water = false) {
-        if(!(x >= 0 && x < width) || !(y >= 0 && y < height)) return false;
-        Mat check = get(x,y);
-        
-        if(check_if_water) return prop(check).state == State::Liquid || prop(check).state == State::Gas;
-
-        return prop(check).state == State::Gas;
+    // check if the square is a valid square
+    bool check_valid(size_t x_cur, size_t y_cur, size_t x_next, size_t y_next) {
+        if((x_next >= 0 && x_next < width) && (y_next >= 0 && y_next < height)) {
+            Mat cur = get(x_cur, y_cur), next = get(x_next, y_next);
+            if(cur.density > next.density) return true;
+            return false;
+        }
+        return false;
     }
 
     void update_seq();
