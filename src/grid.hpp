@@ -83,6 +83,7 @@ public:
         return iter_res;
     }
 
+    void update_cell(size_t x, size_t y);
     void update_seq();
     void update_marg();
     void update() { update_seq(); };
