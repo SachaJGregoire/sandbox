@@ -27,18 +27,24 @@ class Grid {
 private:
     size_t width, height;
     std::vector<Mat> cells;
+    std::vector<bool> updated;
     bool margolus_offset_X = 0;
     bool margolus_offset_Y = 0;
     double topple_counter = 0;    // Simulate topple probability
 
 public:
     Grid() {}
-    Grid(size_t w, size_t h) : width(w), height(h), cells(w*h) {}
+    Grid(size_t w, size_t h) : width(w), height(h), cells(w*h), updated(w*h) {}
     void preset(size_t preset);
 
     Mat get(size_t x, size_t y) const { return cells[x + width * y]; }
     void set(size_t x, size_t y, const Mat& value) { cells[x + width * y] = value; }
-    void swap(size_t x1, size_t y1, size_t x2, size_t y2) { std::swap(cells[x1 + width * y1], cells[x2 + width * y2]); }
+    void swap(size_t x1, size_t y1, size_t x2, size_t y2) {
+        std::swap(cells[x1 + width * y1], cells[x2 + width * y2]);
+        // For now, leaving these off, as the simulation does not work with them on.
+        // updated[x1 + width * y1] = true;
+        // updated[x2 + width * y2] = true;
+    }
 
     // Simulate topple probability
     bool topple(double topple_prob) {
@@ -52,7 +58,7 @@ public:
 
     // check if the square is a valid square
     bool check_valid(size_t x_cur, size_t y_cur, size_t x_next, size_t y_next) {
-        if((x_next >= 0 && x_next < width) && (y_next >= 0 && y_next < height)) {
+          if((x_next >= 0 && x_next < width) && (y_next >= 0 && y_next < height) && !updated[x_next + width * y_next]) {
             Mat cur = get(x_cur, y_cur);
             Mat next = get(x_next, y_next);
             return prop(cur).density > prop(next).density;
@@ -61,7 +67,7 @@ public:
     }
 
     void update_seq();
-    void update_marg2();
+    void update_marg();
     void update() { update_seq(); };
 };
 
