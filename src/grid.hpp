@@ -41,9 +41,9 @@ public:
     void set(size_t x, size_t y, const Mat& value) { cells[x + width * y] = value; }
     void swap(size_t x1, size_t y1, size_t x2, size_t y2) {
         std::swap(cells[x1 + width * y1], cells[x2 + width * y2]);
-        // For now, leaving these off, as the simulation does not work with them on.
-        // updated[x1 + width * y1] = true;
-        // updated[x2 + width * y2] = true;
+        // When swapping two cells, mark them as updated
+        updated[x1 + width * y1] = true;
+        updated[x2 + width * y2] = true;
     }
 
     // Simulate topple probability

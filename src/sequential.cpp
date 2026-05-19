@@ -1,11 +1,11 @@
 #include "grid.hpp"
 
 void Grid::update_seq() {
-	// Implement here oompa loompa
+	// Reset everything to not updated
 	updated.assign(width * height, false);
-	for(size_t y = height; y-- > 0;) {
-		bool ltor = (rand() % 2 == 0);	// whether or not we go left to right on this row
-		/* Extremely unreadable code. Bad practice. But, it works. */
+	bool ttob = rand() % 2;	// whether or not we go top to bottom
+	for(size_t y = ttob ? 0 : height; ttob ? y < height : y-- > 0; y += ttob) {
+		bool ltor = rand() % 2;	// whether or not we go left to right on this row
 		for(size_t x = ltor ? 0 : width; ltor ? x < width : x-- > 0; x += ltor) {
 			if (updated[x + width * y]) continue;
 			Mat cur = get(x,y);
@@ -25,13 +25,13 @@ void Grid::update_seq() {
 			bool diag_right = right && check_valid(x, y, x + 1, y + dir_ver);
 
 			if(diag_left) {
-				if (diag_right && rand() % 2 == 0) swap(x, y, x + 1, y + dir_ver);
+				if (diag_right && rand() % 2) swap(x, y, x + 1, y + dir_ver);
 				else swap(x, y, x - 1, y + dir_ver); // left diag only
 			} else if(diag_right) swap(x, y, x + 1, y + dir_ver); // right diag only
 			// liquid logic
 			else if(prop(cur).state == State::Liquid || prop(cur).state == State::Gas) {
 				if(left) {
-					if(right && rand() % 2 == 0) swap(x, y, x + 1, y); // left and right free
+					if(right && rand() % 2) swap(x, y, x + 1, y); // left and right free
 					else swap(x, y, x - 1, y); // right free
 				} else if(right) swap(x, y, x + 1, y); // left free
 			}
