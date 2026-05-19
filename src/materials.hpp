@@ -22,7 +22,8 @@ enum class State {
 struct Particle {
 	Mat m;
     State state = State::Static;
-	uint16_t density = 0;
+	uint8_t density = 0;
+    // TODO: change order or make constructors or something smart
     double topple_prob = 0;
     uint8_t dispertion_rate = 0;
 };

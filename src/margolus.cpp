@@ -2,32 +2,33 @@
 
 void Grid::update_marg() {
 	// TODO: DOES NOT DO BORDERS YET
-	// I give up on this
+	// Does not work atm
 	for (size_t x = margolus_offset_X; x < width - 1; x += 2) {
 		for (size_t y = margolus_offset_Y; y < height - 1; y += 2) {
-			Mat pTL = get(x, y);
-			Mat pTR = get(x + 1, y);
-			Mat pBL = get(x, y + 1);
-			Mat pBR = get(x + 1, y + 1);
-			bool col_left  = prop(pTL).state != State::Static && prop(pBL).state != State::Static && prop(pBL).density < prop(pTL).density;
-			bool col_right = prop(pTR).state != State::Static && prop(pBR).state != State::Static && prop(pBR).density < prop(pTR).density;
+			Particle pTL = part(x, y);
+			Particle pTR = part(x + 1, y);
+			Particle pBL = part(x, y + 1);
+			Particle pBR = part(x + 1, y + 1);
+			// TODO: funny stuff hehe
+			bool col_left  = pTL.state != State::Static && pBL.state != State::Static && pBL.density < pTL.density + 50 * (pTL.density == 0);
+			bool col_right = pTR.state != State::Static && pBR.state != State::Static && pBR.density < pTR.density;
 			if (col_left || col_right) {
 				if (col_left) swap(x, y, x, y + 1);
 				if (col_right) swap(x + 1, y, x + 1, y + 1);
 				continue;
 			}
-			bool diag_left = prop(pTL).state != State::Static && prop(pTR).density < prop(pTL).density && prop(pBR).density < prop(pTL).density;
+			bool diag_left = pTL.state != State::Static && pTR.density < pTL.density && pBR.density < pTL.density;
 			if (diag_left) {
 				swap(x, y, x + 1, y + 1);
 				continue;
 			}
-			bool diag_right = prop(pTR).state != State::Static && prop(pTL).density < prop(pTR).density && prop(pBL).density < prop(pTR).density;
+			bool diag_right = pTR.state != State::Static && pTL.density < pTR.density && pBL.density < pTR.density;
 			if (diag_right) {
 				swap(x + 1, y, x, y + 1);
 				continue;
 			}
-			bool row_top = (prop(pTL).state == State::Liquid || prop(pTL).state == State::Gas) && (prop(pTR).state == State::Liquid || prop(pTR).state == State::Gas);
-			bool row_bot = (prop(pBL).state == State::Liquid || prop(pBL).state == State::Gas) && (prop(pBR).state == State::Liquid || prop(pBR).state == State::Gas);
+			bool row_top = (pTL.state == State::Liquid || pTL.state == State::Gas) && (pTR.state == State::Liquid || pTR.state == State::Gas);
+			bool row_bot = (pBL.state == State::Liquid || pBL.state == State::Gas) && (pBR.state == State::Liquid || pBR.state == State::Gas);
 			if (row_top) swap(x, y, x + 1, y);
 			if (row_bot) swap(x, y + 1, x + 1, y + 1);
 		}
