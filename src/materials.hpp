@@ -8,6 +8,7 @@ enum class Mat : uint8_t {
     Sand,
     Water,
     Stone,
+    Vapor,
 };
 
 
@@ -23,6 +24,7 @@ struct Particle {
     State state = State::Static;
 	uint16_t density = 0;
     double topple_prob = 0;
+    uint8_t dispertion_rate = 0;
 };
 extern Particle properties[256];
 Particle& prop(Mat m);

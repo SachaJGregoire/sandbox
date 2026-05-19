@@ -31,9 +31,18 @@ void Grid::update_seq() {
 			// liquid logic
 			else if(prop(cur).state == State::Liquid || prop(cur).state == State::Gas) {
 				if(left) {
-					if(right && rand() % 2) swap(x, y, x + 1, y); // left and right free
-					else swap(x, y, x - 1, y); // right free
-				} else if(right) swap(x, y, x + 1, y); // left free
+					if(right && rand() % 2) { // right and right free
+						size_t i = check_valid_iter(x, y, x + 1, y, prop(cur).dispertion_rate);
+						swap(x, y, x + i, y);
+					}
+					else { // left free
+						size_t i = check_valid_iter(x, y, x - 1, y, prop(cur).dispertion_rate);
+						swap(x, y, x - i, y);
+					} 
+				} else if(right) { // right free
+					size_t i = check_valid_iter(x, y, x + 1, y, prop(cur).dispertion_rate);
+					swap(x, y, x + i, y);
+				} 
 			}
 		}
 	}

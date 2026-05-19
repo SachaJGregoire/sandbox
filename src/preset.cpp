@@ -13,6 +13,22 @@ void Grid::preset(size_t preset) {
                 for (int y = 10; y < 50; y++)
                     set(x, y, Mat::Sand);
             break;
+        case 2: // Sand, water and vapor
+            for (int x = 200; x < 400; x++)
+                for (int y = 10; y < 60; y++)
+                    set(x, y, Mat::Sand);
+            for (int x = 200; x < 400; x++)
+                for (int y = 120; y < 170; y++)
+                    set(x, y, Mat::Water);
+            for (int x = 200; x < 400; x++)
+                for (int y = 200; y < 250; y++)
+                    set(x, y, Mat::Vapor);
+            break;
+        case 3: // only water
+            for (int x = 250; x < 350; x++)
+                for (int y = 50; y < 300; y++)
+                    set(x, y, Mat::Water);
+            break;
         default:
             break;
     }

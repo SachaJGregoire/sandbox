@@ -58,12 +58,29 @@ public:
 
     // check if the square is a valid square
     bool check_valid(size_t x_cur, size_t y_cur, size_t x_next, size_t y_next) {
-          if((x_next >= 0 && x_next < width) && (y_next >= 0 && y_next < height) && !updated[x_next + width * y_next]) {
+        if((x_next >= 0 && x_next < width) && (y_next >= 0 && y_next < height) && !updated[x_next + width * y_next]) {
             Mat cur = get(x_cur, y_cur);
             Mat next = get(x_next, y_next);
             return prop(cur).density > prop(next).density;
         }
         return false;
+    }
+    size_t check_valid_iter(size_t x_cur, size_t y_cur, size_t x_next, size_t y_next, size_t nbiter) {
+        int x_disp = (int) x_next - (int) x_cur, y_disp = (int) x_next - (int) x_cur;
+        size_t iter_res = 0;
+        for(size_t i = 1; i <= nbiter; i++) {
+            if((x_next >= 0 && x_next < width) && (y_next >= 0 && y_next < height) && !updated[x_next + width * y_next]) {
+                Mat cur = get(x_cur, y_cur);
+                Mat next = get(x_next, y_next);
+                if(prop(cur).density > prop(next).density)
+                    iter_res = i;
+                else
+                    break;
+            }
+            x_next += x_disp;
+            y_next += y_disp;
+        }
+        return iter_res;
     }
 
     void update_seq();

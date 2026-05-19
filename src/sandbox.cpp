@@ -15,7 +15,7 @@ void Sandbox::_ready() {
     texture = ImageTexture::create_from_image(image);
     set_texture(texture);
 
-    grid.preset(1);
+    grid.preset(3);
 }
 
 void Sandbox::_process(double delta) {
