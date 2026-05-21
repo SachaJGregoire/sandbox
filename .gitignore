@@ -80,3 +80,5 @@ Testing/
 # godot-cpp bindings cache
 godot-cpp/bin/
 godot-cpp/gen/
+
+.os
