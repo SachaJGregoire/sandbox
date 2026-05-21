@@ -16,6 +16,11 @@ void Sandbox::_ready() {
     set_texture(texture);
 
     grid.preset(2);
+    for (size_t y = 0; y < SANDBOX_HEIGHT; ++y) {
+        for (size_t x = 0; x < SANDBOX_WIDTH; ++x) {
+            image->set_pixel(x, y, get_color(grid.get(x, y)));
+        }
+    }
 }
 
 void Sandbox::_process(double delta) {
@@ -23,7 +28,7 @@ void Sandbox::_process(double delta) {
 
     for (size_t y = 0; y < SANDBOX_HEIGHT; ++y) {
         for (size_t x = 0; x < SANDBOX_WIDTH; ++x) {
-            image->set_pixel(x, y, get_color(grid.get(x, y)));
+            if (grid.updated_cell(x, y)) image->set_pixel(x, y, get_color(grid.get(x, y)));
         }
     }
     texture->update(image);

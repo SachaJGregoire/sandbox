@@ -48,6 +48,7 @@ public:
         updated[x2 + width * y2] = true;
     }
     Particle& part(size_t x, size_t y) { return prop(get(x, y)); }
+    bool updated_cell(size_t x, size_t y) { return updated[x + width * y]; }
 
     // Simulate probabilities
     bool coin() { return rand() % 2; }

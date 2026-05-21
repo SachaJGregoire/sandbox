@@ -49,13 +49,15 @@ if env["target"] in ["editor", "template_debug"]:
 
 # .dev doesn't inhibit compatibility, so we don't need to key it.
 # .universal just means "compatible with all relevant arches" so we don't need to key it.
+# 1. Remove the $SHLIBPREFIX variable from the string formatting
 suffix = env['suffix'].replace(".dev", "").replace(".universal", "")
+lib_filename = "{}{}{}".format(libname, suffix, env.subst('$SHLIBSUFFIX'))
 
-lib_filename = "{}{}{}{}".format(env.subst('$SHLIBPREFIX'), libname, suffix, env.subst('$SHLIBSUFFIX'))
-
+# 2. Force the SCons SharedLibrary builder to use an empty prefix
 library = env.SharedLibrary(
     "bin/{}/{}".format(env['platform'], lib_filename),
     source=sources,
+    SHLIBPREFIX=""  # <-- This is the absolute override
 )
 
 copy = env.Install("{}/bin/{}/".format(projectdir, env["platform"]), library)
