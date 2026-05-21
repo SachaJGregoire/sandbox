@@ -15,7 +15,7 @@ void Grid::update_seq() {
 void Grid::update_cell(size_t x, size_t y) {
 	if (updated[x + width * y]) return;
 	Particle cur = part(x,y);
-	if (cur.state == State::Static || cur.density == 0) return;
+	if (cur.m == Mat::Air || cur.state == State::Static) return;
 
 	// Vertical
 	int dir_ver = (cur.state == State::Gas) ? -1 : 1;
@@ -35,6 +35,7 @@ void Grid::update_cell(size_t x, size_t y) {
 	else if(diag_right) swap(x, y, x + 1, y + dir_ver);
 
 	// Sideways (IF YOU ADD A STATE OF MATTER, THIS CODE IS COOKED)
+	// TODO: Should not swap? But instead shift the row. Or something
 	if(diag_left || diag_right || cur.state == State::Solid || (!left && !right)) return;
 	if (left && right) {
 		if (coin()) left = false;

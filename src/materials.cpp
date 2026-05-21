@@ -5,8 +5,8 @@ Particle properties[256] = {
 	{Mat::Air, 		State::Gas, 	0},
 	{Mat::Sand, 	State::Solid, 	100, 	0.5	},
 	{Mat::Water, 	State::Liquid, 	50,     0,            5},
-	{Mat::Stone, 	State::Static, 	100},
-    {Mat::Vapor, 	State::Gas, 	30,     0,            5},
+	{Mat::Stone, 	State::Static, 	255},
+    {Mat::Vapor, 	State::Gas, 	5,     0,            5},
 };
 
 godot::Color get_color(Mat m) {
@@ -18,8 +18,4 @@ godot::Color get_color(Mat m) {
         case Mat::Vapor :   return godot::Color(0.85,   0.90,   0.95,   0.45);
         default         :   return godot::Color(0.1,    0.1,    0.1,    1.0);
     }
-}
-
-Particle& prop(Mat m) {
-    return properties[static_cast<uint8_t>(m)];
 }

@@ -47,7 +47,7 @@ public:
         updated[x1 + width * y1] = true; // OPTION: Mat next = get(x2, y2); true -> prop(next).density > 0 option
         updated[x2 + width * y2] = true;
     }
-    Particle& part(size_t x, size_t y) { return prop(get(x, y)); }
+    Particle& part(size_t x, size_t y) { return properties[static_cast<uint8_t>(cells[x + width * y])]; }
     bool updated_cell(size_t x, size_t y) { return updated[x + width * y]; }
 
     // Simulate probabilities
@@ -64,7 +64,8 @@ public:
     // check if the square is a valid square
     bool check_valid(size_t x_cur, size_t y_cur, size_t x_next, size_t y_next, bool dispersion = false) {
         if (x_next >= width || y_next >= height || updated[x_next + width * y_next]) return false;
-        if (dispersion) return part(x_next, y_next).density == 0;
+        // TODO: either Mat::Air or density == 0
+        if (dispersion) return part(x_next, y_next).m == Mat::Air;
         return part(x_cur, y_cur).density > part(x_next, y_next).density;
     }
     size_t check_valid_iter(size_t x_cur, size_t y_cur, size_t x_next, size_t y_next, size_t nbiter, bool dispersion = false) {
