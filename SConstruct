@@ -50,12 +50,12 @@ if env["target"] in ["editor", "template_debug"]:
 # .dev doesn't inhibit compatibility, so we don't need to key it.
 # .universal just means "compatible with all relevant arches" so we don't need to key it.
 suffix = env['suffix'].replace(".dev", "").replace(".universal", "")
-
-lib_filename = "{}{}{}{}".format(env.subst('$SHLIBPREFIX'), libname, suffix, env.subst('$SHLIBSUFFIX'))
+lib_filename = "{}{}{}".format(libname, suffix, env.subst('$SHLIBSUFFIX'))
 
 library = env.SharedLibrary(
     "bin/{}/{}".format(env['platform'], lib_filename),
     source=sources,
+    SHLIBPREFIX=""
 )
 
 copy = env.Install("{}/bin/{}/".format(projectdir, env["platform"]), library)
