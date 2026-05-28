@@ -19,7 +19,3 @@ godot::Color get_color(Mat m) {
         default         :   return godot::Color(0.1,    0.1,    0.1,    1.0);
     }
 }
-
-Particle& prop(Mat m) {
-    return properties[static_cast<uint8_t>(m)];
-}

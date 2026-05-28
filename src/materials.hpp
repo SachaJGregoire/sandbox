@@ -28,7 +28,6 @@ struct Particle {
     uint8_t dispertion_rate = 0;
 };
 extern Particle properties[256];
-Particle& prop(Mat m);
 godot::Color get_color(Mat m);
 
 #endif // MATERIALS_HPP
