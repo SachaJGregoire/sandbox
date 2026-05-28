@@ -81,4 +81,4 @@ Testing/
 godot-cpp/bin/
 godot-cpp/gen/
 
-.os
+*.os

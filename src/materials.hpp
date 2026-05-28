@@ -9,9 +9,8 @@ enum class Mat : uint8_t {
     Water,
     Stone,
     Vapor,
+    Count,
 };
-
-
 
 enum class State {
     Static,
@@ -21,6 +20,7 @@ enum class State {
 };
 struct Particle {
 	Mat m;
+    std::string name;
     State state = State::Static;
 	uint8_t density = 0;
     // TODO: change order or make constructors or something smart
