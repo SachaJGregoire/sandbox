@@ -85,6 +85,7 @@ void Sandbox::_process(double delta) {
 
                     if (target_x >= 0 && target_x < SANDBOX_WIDTH && target_y >= 0 && target_y < SANDBOX_HEIGHT && grid.get(target_x, target_y) == Mat::Air) {
                         grid.set(target_x, target_y, current_user_material);
+                        grid.set_updated(target_x, target_y);
                     }
                 }
             }
@@ -97,9 +98,10 @@ void Sandbox::_process(double delta) {
 
     for (size_t y = 0; y < SANDBOX_HEIGHT; ++y) {
         for (size_t x = 0; x < SANDBOX_WIDTH; ++x) {
-            if (grid.updated_cell(x, y)) image->set_pixel(x, y, get_color(grid.get(x, y)));
+            if (grid.get_updated(x, y)) image->set_pixel(x, y, get_color(grid.get(x, y)));
         }
     }
+    grid.reset_updated();
     texture->update(image);
 }
 
@@ -117,6 +119,7 @@ void Sandbox::reset_scene() {
             grid.set(x, y, Mat::Air);
         }
     }
+    // grid.preset();
 
     int total_buttons = static_cast<int>(Mat::Count) + 2; 
 
@@ -131,4 +134,11 @@ void Sandbox::reset_scene() {
             }
         }
     }
+
+    for (size_t y = 0; y < SANDBOX_HEIGHT; ++y) {
+        for (size_t x = 0; x < SANDBOX_WIDTH; ++x) {
+            image->set_pixel(x, y, get_color(grid.get(x, y)));
+        }
+    }
+    texture->update(image);
 }

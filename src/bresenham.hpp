@@ -1,3 +1,6 @@
+#ifndef BRESENHAM_HPP
+#define BRESENHAM_HPP
+
 #include <vector>
 #include <iostream> 
 
@@ -32,3 +35,5 @@ int main() {
     for (int i = 0; i < res.size(); i++) std::cout << "(" << res[i].first << ", " << res[i].second << ")" << std::endl;
 }
 */
+
+#endif

@@ -48,7 +48,9 @@ public:
         updated[x2 + width * y2] = true;
     }
     Particle& part(size_t x, size_t y) { return properties[static_cast<uint8_t>(cells[x + width * y])]; }
-    bool updated_cell(size_t x, size_t y) { return updated[x + width * y]; }
+    void reset_updated() { updated.assign(width * height, false);}
+    void set_updated(size_t x, size_t y) { updated[x + width * y] = true; }
+    bool get_updated(size_t x, size_t y) { return updated[x + width * y]; }
 
     // Simulate probabilities
     bool coin() { return rand() % 2; }
@@ -81,8 +83,10 @@ public:
 
     void update_cell(size_t x, size_t y);
     void update_seq();
+    void update_seq_thread(size_t x_start, size_t y_start, size_t x_end, size_t y_end);
+    void update_seq_threaded();
     void update_marg();
-    void update() { update_seq(); };
+    void update() { update_seq_threaded(); };
 };
 
 #endif // GRID_HPP
