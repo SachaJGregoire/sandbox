@@ -40,19 +40,19 @@ const int Stone = 3;
 const int Vapor = 4;
 const int count_material = 5;
 
-const vec4 material_colors[count_material] = vec4[count_material](
-	vec4(0.1,    0.1,    0.1,    1.0),  // Air
-	vec4(0.86,   0.73,   0.36,   1.0),  // Sand
-	vec4(0.0,    0.4,    0.9,    1.0),  // Water
-	vec4(0.5,    0.5,    0.5,    1.0),  // Stone
-	vec4(0.85,   0.90,   0.95,   0.45)  // Vapor
-);
-
 const vec4 Color_Air    = vec4(0.1,    0.1,    0.1,    1.0);
 const vec4 Color_Sand   = vec4(0.86,   0.73,   0.36,   1.0);
 const vec4 Color_Water  = vec4(0.0,    0.4,    0.9,    1.0);
 const vec4 Color_Stone  = vec4(0.5,    0.5,    0.5,    1.0);
 const vec4 Color_Vapor  = vec4(0.85,   0.90,   0.95,   0.45);
+
+const vec4 material_colors[count_material] = vec4[count_material](
+	Color_Air,
+	Color_Sand,
+	Color_Water,
+	Color_Stone,
+	Color_Vapor
+);
 
 struct Particle {
 	int mat;
@@ -63,7 +63,7 @@ struct Particle {
 };
 
 const Particle properties[count_material] = Particle[count_material](
-//           mat,   state,        density, topple, dispersion
+//           mat,   state,  density, topple, dispersion
 	Particle(Air,   Gas,    0,   0.0,  0),
 	Particle(Sand,  Solid,  100, 0.5,  0),
 	Particle(Water, Liquid, 50,  0.0,  5),
@@ -99,63 +99,51 @@ int get_mat(ivec2 p) {
 	return decode(imageLoad(input_grid, p)).mat;
 }
 
-void main() {
-	ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
-	if (coord.x >= WIDTH || coord.y >= HEIGHT) return;
-
-	if (params.do_reset == 1) {
-        imageStore(output_grid, coord, encode(Air));
-        return;
-    }
-
+int update(ivec2 coord) {
 	Particle cell = decode(imageLoad(input_grid, coord));
 	int next_state = cell.mat;
 
-	if (params.is_frozen == 0) {
-		
-		// Alternating slide direction prevents parallel particle collisions
-		int slide_dir = (params.frame_count % 2 == 0) ? -1 : 1;
+	// Alternating slide direction prevents parallel particle collisions
+	int slide_dir = (params.frame_count % 2 == 0) ? -1 : 1;
 
-		if(cell.mat == Sand) {
-			int mat_down = get_mat(coord + ivec2(0, 1));
+	if(cell.state == Solid) {
+		int mat_down = get_mat(coord + ivec2(0, 1));
+	 	
+		if(mat_down == Air) next_state = Air;
+		else {
+			int mat_diag_r = get_mat(coord + ivec2(1, 1));
+			int mat_diag_l = get_mat(coord + ivec2(-1, 1));
+			int mat_r = get_mat(coord + ivec2(1, 0));
+			int mat_l = get_mat(coord + ivec2(-1, 0));
 
-			if(mat_down == Air) next_state = Air;
-			else {
-				int mat_diag_r = get_mat(coord + ivec2(1, 1));
-				int mat_diag_l = get_mat(coord + ivec2(-1, 1));
-				int mat_r = get_mat(coord + ivec2(1, 0));
-				int mat_l = get_mat(coord + ivec2(-1, 0));
+			bool diag_left = (mat_diag_l == Air) && mat_l != Air;
+			bool diag_right = (mat_diag_r == Air) && mat_r != Air;
 
-				bool diag_left = (mat_diag_l == Air) && mat_l != Air;
-				bool diag_right = (mat_diag_r == Air) && mat_r != Air;
-
-				if(diag_left && diag_right) {
-					if(coin(coord, params.frame_count))
-						next_state = mat_diag_l; // Air
-					else
-						next_state = mat_diag_r; // Air
-				}
-				else if(diag_left) next_state = mat_diag_l; // Air
-				else if(diag_right) next_state = mat_diag_r; // Air
+			if(diag_left && diag_right) {
+				if(coin(coord, params.frame_count))
+					next_state = mat_diag_l; // Air
+				else
+					next_state = mat_diag_r; // Air
 			}
+			else if(diag_left) next_state = mat_diag_l; // Air
+			else if(diag_right) next_state = mat_diag_r; // Air
 		}
-		else if(cell.mat == Air) {
-			int mat_up = get_mat(coord + ivec2(0, -1));
-			if(mat_up == Sand) next_state = Sand;
-			else {
-				int mat_diag_r = get_mat(coord + ivec2(1, -1));
-				int mat_diag_l = get_mat(coord + ivec2(-1, -1));
-				int mat_r = get_mat(coord + ivec2(1, 0));
-				int mat_l = get_mat(coord + ivec2(-1, 0));
+	} else if(cell.mat == Air) {
+		int mat_up = get_mat(coord + ivec2(0, -1));
+		if(mat_up == Sand) next_state = Sand;
+		else {
+			int mat_diag_r = get_mat(coord + ivec2(1, -1));
+			int mat_diag_l = get_mat(coord + ivec2(-1, -1));
+			int mat_r = get_mat(coord + ivec2(1, 0));
+			int mat_l = get_mat(coord + ivec2(-1, 0));
 
-				bool left = mat_diag_l == Sand && mat_l != Air;
-				bool right = mat_diag_r == Sand && mat_r != Air;
-				
-				if(left && right)
-					next_state = coin(coord, params.frame_count) ? Sand : Air;
-				else if(left)  next_state = Sand;
-				else if(right) next_state = Sand;
-			}
+			bool left = mat_diag_l == Sand && mat_l != Air;
+			bool right = mat_diag_r == Sand && mat_r != Air;
+			
+			if(left && right)
+				next_state = coin(coord, params.frame_count) ? Sand : Air;
+			else if(left)  next_state = Sand;
+			else if(right) next_state = Sand;
 		}
 	}
 
@@ -184,6 +172,33 @@ void main() {
 	// else if (cell.state == Gas || ) {
 	//     // tricky ?
 	// }
+	return next_state;
+}
+
+int update_marg(ivec2 coord) {
+	Particle TL = decode(imageLoad(input_grid, coord));
+	Particle TR = decode(imageLoad(input_grid, coord + ivec2(1, 0)));
+	Particle BL = decode(imageLoad(input_grid, coord + ivec2(0, 1)));
+	Particle BR = decode(imageLoad(input_grid, coord + ivec2(1, 1)));
+	//if (TL.state == Solid + TR.state == Solid + BL.state == Solid + BR.state == Solid > 2) return Stone; // Placeholder
+	return Stone;
+}
+
+void main() {
+	int method = 0;
+	ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
+	if (coord.x >= WIDTH || coord.y >= HEIGHT) return;
+	int next_state = get_mat(coord);
+	if (params.is_frozen == 0) {
+		switch (method) {
+			case 0: next_state = update(coord); 		break;
+			case 1: next_state = update_marg(coord);	break;
+		}
+	}
+	if (params.do_reset == 1) {
+        imageStore(output_grid, coord, encode(Air));
+        return;
+    }
 
 	// Process Mouse Input
 	if (params.draw_mode > 0) {
