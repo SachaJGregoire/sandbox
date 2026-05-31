@@ -8,12 +8,12 @@ layout(set = 0, binding = 1, rgba32f) uniform writeonly image2D output_grid;
 // We use Push Constants to quickly send mouse input from GDScript
 layout(push_constant, std430) uniform Params {
 vec2 mouse_pos;    // 8 bytes (offsets 0-7)
-    float brush_size;  // 4 bytes (offsets 8-11)
-    int draw_mode;     // 4 bytes (offsets 12-15) <-- Change this back!
-    int frame_count;   // 4 bytes (offsets 16-19)
-    int is_frozen;     // 4 bytes (offsets 20-23)
-    int do_reset;      // 4 bytes (offsets 24-27)
-    float pad2;        // 4 bytes (offsets 28-31)
+	float brush_size;  // 4 bytes (offsets 8-11)
+	int draw_mode;     // 4 bytes (offsets 12-15) <-- Change this back!
+	int frame_count;   // 4 bytes (offsets 16-19)
+	int is_frozen;     // 4 bytes (offsets 20-23)
+	int do_reset;      // 4 bytes (offsets 24-27)
+	float pad2;        // 4 bytes (offsets 28-31)
 } params;
 
 float hash2t(vec2 p, int frame) {
@@ -142,8 +142,8 @@ void update(ivec2 coord) {
 			
 			if(left && right)
 				next_state = coin(coord, params.frame_count) ? Sand : Air;
-			else if(left)  next_state = Sand;
-			else if(right) next_state = Sand;
+			else if(left && coin(coord + ivec2(-1, -1), params.frame_count))  next_state = Sand;
+			else if(right && coin(coord + ivec2(1, -1), params.frame_count)) next_state = Sand;
 		}
 	}
 
@@ -194,9 +194,9 @@ void main() {
 		}
 	}
 	if (params.do_reset == 1) {
-        imageStore(output_grid, coord, encode(Air));
-        return;
-    }
+		imageStore(output_grid, coord, encode(Air));
+		return;
+	}
 
 	// Process Mouse Input
 	int next_state = get_mat(coord);
