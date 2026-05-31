@@ -28,19 +28,32 @@ script = ExtResource("1_ig7tw")
 [node name="CanvasLayer" type="CanvasLayer" parent="TextureRect" unique_id=665484866]
 
 [node name="HBoxContainer" type="HBoxContainer" parent="TextureRect/CanvasLayer" unique_id=1491535583]
-offset_right = 40.0
-offset_bottom = 40.0
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -332.0
+offset_top = 24.0
+offset_right = 68.0
+offset_bottom = 74.0
+grow_horizontal = 0
 
 [node name="SandButton" type="Button" parent="TextureRect/CanvasLayer/HBoxContainer" unique_id=2088457241]
+custom_minimum_size = Vector2(100, 30)
 layout_mode = 2
+size_flags_stretch_ratio = 0.0
+theme_override_font_sizes/font_size = 22
 text = "Sand"
 
 [node name="StoneButton" type="Button" parent="TextureRect/CanvasLayer/HBoxContainer" unique_id=1282805812]
+custom_minimum_size = Vector2(100, 30)
 layout_mode = 2
+theme_override_font_sizes/font_size = 22
 text = "Stone"
 
 [node name="AirButton" type="Button" parent="TextureRect/CanvasLayer/HBoxContainer" unique_id=1844384132]
+custom_minimum_size = Vector2(100, 30)
 layout_mode = 2
+theme_override_font_sizes/font_size = 22
 text = "Eraser"
 
 [connection signal="pressed" from="TextureRect/CanvasLayer/HBoxContainer/SandButton" to="TextureRect" method="select_sand"]
