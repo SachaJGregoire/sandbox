@@ -11,11 +11,13 @@ const WIDTH: int = 512
 const HEIGHT: int = 512
 const SHADER_PATH: String = "res://sand.glsl"
 
-var simulation_running: bool = true
+var is_frozen: bool = false
+var do_reset: bool = false
 var total_frames: int = 0
 
 # Interactivity variables
-var draw_mode: int = 0 # 0=None, 1=Sand, 2=Wall, 3=Erase
+var selected_material: int = 1
+var is_drawing: bool = false
 var brush_size: float = 12.0
 
 # Margolus Neighborhood ?
@@ -49,7 +51,7 @@ func _ready():
 	texture = tex_rd
 	
 	print("Ready! Controls:")
-	print("Left Click = Sand | Right Click = Wall | Middle Click = Erase | Space = Pause")
+	print("Left Click = Sand | Right Click = Wall | Esc = Erase | Space = Pause")
 
 func create_texture() -> RID:
 	var format = RDTextureFormat.new()
@@ -144,26 +146,22 @@ func initialize_simple_pattern(texture_rid: RID) -> void:
 			
 	rd.texture_update(texture_rid, 0, data.to_byte_array())
 
-func _input(event):
-	if event is InputEventMouseButton:
-		if event.pressed:
-			if event.button_index == MOUSE_BUTTON_LEFT:
-				draw_mode = 1 # Sand
-			elif event.button_index == MOUSE_BUTTON_RIGHT:
-				draw_mode = 2 # Wall
-			elif event.button_index == MOUSE_BUTTON_MIDDLE:
-				draw_mode = 3 # Erase
-		else:
-			draw_mode = 0 # Stop drawing
-			
-	elif event is InputEventKey and event.pressed and event.keycode == KEY_SPACE:
-		simulation_running = !simulation_running
-		print("Simulation: ", "RUNNING" if simulation_running else "PAUSED")
+func _gui_input(event):
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		is_drawing = event.pressed
 
+
+func _unhandled_input(event):
+	if event is InputEventKey and event.pressed:
+		if event.keycode == KEY_SPACE:
+			is_frozen = !is_frozen
+			print("Simulation: ", "FROZEN" if is_frozen else "RUNNING")
+		elif event.keycode == KEY_ESCAPE:
+			do_reset = true
 
 
 func _process(_delta: float) -> void:
-	if not rd or not pipeline.is_valid() or not simulation_running:
+	if not rd or not pipeline.is_valid():
 		return
 		
 	total_frames += 1
@@ -183,11 +181,13 @@ func _process(_delta: float) -> void:
 		var push_bytes = PackedByteArray()
 		push_bytes.resize(32) # must be mult of 16
 		
-		push_bytes.encode_float(0, tex_mouse.x)      # vec2 mouse_pos.x
-		push_bytes.encode_float(4, tex_mouse.y)      # vec2 mouse_pos.y
-		push_bytes.encode_float(8, brush_size)       # float brush_size
-		push_bytes.encode_s32(12, draw_mode)         # int draw_mode
-		push_bytes.encode_s32(16, total_frames)      # int frame_count
+		push_bytes.encode_float(0, tex_mouse.x)           
+		push_bytes.encode_float(4, tex_mouse.y)           
+		push_bytes.encode_float(8, brush_size)      
+		push_bytes.encode_s32(12, selected_material if is_drawing else 0)      
+		push_bytes.encode_s32(16, total_frames)           
+		push_bytes.encode_s32(20, 1 if is_frozen else 0)  
+		push_bytes.encode_s32(24, 1 if do_reset else 0)
 
 		
 		rd.compute_list_set_push_constant(compute_list, push_bytes, push_bytes.size())
@@ -223,13 +223,13 @@ func _process(_delta: float) -> void:
 			var push_bytes = PackedByteArray()
 			push_bytes.resize(32) # must be mult of 16
 			
-			push_bytes.encode_float(0, tex_mouse.x)      # vec2 mouse_pos.x
-			push_bytes.encode_float(4, tex_mouse.y)      # vec2 mouse_pos.y
-			push_bytes.encode_float(8, brush_size)       # float brush_size
-			push_bytes.encode_s32(12, draw_mode)         # int draw_mode
-			push_bytes.encode_s32(16, total_frames)      # int frame_count
-			push_bytes.encode_s32(20,   (offset[0] + frame_offset_x) % 2)  # block x
-			push_bytes.encode_s32(24,   (offset[1] + frame_offset_y) % 2)  # block y
+			push_bytes.encode_float(0, tex_mouse.x)           # vec2 mouse_pos.x
+			push_bytes.encode_float(4, tex_mouse.y)           # vec2 mouse_pos.y
+			push_bytes.encode_float(8, brush_size)            # float brush_size
+			push_bytes.encode_s32(12, selected_material if is_drawing else 0)      
+			push_bytes.encode_s32(16, total_frames)           # int frame_count
+			push_bytes.encode_s32(20, 1 if is_frozen else 0)  # int is_frozen
+			push_bytes.encode_s32(24, 1 if do_reset else 0)   # int do_reset
 
 			
 			rd.compute_list_set_push_constant(compute_list, push_bytes, push_bytes.size())
@@ -243,3 +243,15 @@ func _process(_delta: float) -> void:
 			var tex_rd = Texture2DRD.new()
 			tex_rd.texture_rd_rid = textures[current_texture_index]
 			texture = tex_rd
+	
+	do_reset = 0
+
+func select_sand():
+	selected_material = 1
+	print("MATERIAL: SAND")
+func select_stone():
+	selected_material = 2
+	print("MATERIAL: STONE")
+func select_air():
+	selected_material = 3
+	print("MATERIAL: AIR")

@@ -7,13 +7,13 @@ layout(set = 0, binding = 1, rgba32f) uniform writeonly image2D output_grid;
 
 // We use Push Constants to quickly send mouse input from GDScript
 layout(push_constant, std430) uniform Params {
-	vec2 mouse_pos;    // 8 bytes (offsets 0-7)
-	float brush_size;  // 4 bytes (offsets 8-11)
-	int draw_mode;     // 4 bytes (offsets 12-15)
-	int frame_count;   // 4 bytes (offsets 16-19)
-	float pad0;        // 4 bytes (offsets 20-23)
-	float pad1;        // 4 bytes (offsets 24-27)
-	float pad2;        // 4 bytes (offsets 28-31)
+vec2 mouse_pos;    // 8 bytes (offsets 0-7)
+    float brush_size;  // 4 bytes (offsets 8-11)
+    int draw_mode;     // 4 bytes (offsets 12-15) <-- Change this back!
+    int frame_count;   // 4 bytes (offsets 16-19)
+    int is_frozen;     // 4 bytes (offsets 20-23)
+    int do_reset;      // 4 bytes (offsets 24-27)
+    float pad2;        // 4 bytes (offsets 28-31)
 } params;
 
 float hash2t(vec2 p, int frame) {
@@ -103,52 +103,59 @@ void main() {
 	ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
 	if (coord.x >= WIDTH || coord.y >= HEIGHT) return;
 
-	Particle cell = decode(imageLoad(input_grid, coord));
+	if (params.do_reset == 1) {
+        imageStore(output_grid, coord, encode(Air));
+        return;
+    }
 
+	Particle cell = decode(imageLoad(input_grid, coord));
 	int next_state = cell.mat;
 
-	// Alternating slide direction prevents parallel particle collisions
-	int slide_dir = (params.frame_count % 2 == 0) ? -1 : 1;
+	if (params.is_frozen == 0) {
+		
+		// Alternating slide direction prevents parallel particle collisions
+		int slide_dir = (params.frame_count % 2 == 0) ? -1 : 1;
 
-	if(cell.mat == Sand) {
-		int mat_down = get_mat(coord + ivec2(0, 1));
-	 	
-		if(mat_down == Air) next_state = Air;
-		else {
-			int mat_diag_r = get_mat(coord + ivec2(1, 1));
-			int mat_diag_l = get_mat(coord + ivec2(-1, 1));
-			int mat_r = get_mat(coord + ivec2(1, 0));
-			int mat_l = get_mat(coord + ivec2(-1, 0));
+		if(cell.mat == Sand) {
+			int mat_down = get_mat(coord + ivec2(0, 1));
 
-			bool diag_left = (mat_diag_l == Air) && mat_l != Air;
-			bool diag_right = (mat_diag_r == Air) && mat_r != Air;
+			if(mat_down == Air) next_state = Air;
+			else {
+				int mat_diag_r = get_mat(coord + ivec2(1, 1));
+				int mat_diag_l = get_mat(coord + ivec2(-1, 1));
+				int mat_r = get_mat(coord + ivec2(1, 0));
+				int mat_l = get_mat(coord + ivec2(-1, 0));
 
-			if(diag_left && diag_right) {
-				if(coin(coord, params.frame_count))
-					next_state = mat_diag_l; // Air
-				else
-					next_state = mat_diag_r; // Air
+				bool diag_left = (mat_diag_l == Air) && mat_l != Air;
+				bool diag_right = (mat_diag_r == Air) && mat_r != Air;
+
+				if(diag_left && diag_right) {
+					if(coin(coord, params.frame_count))
+						next_state = mat_diag_l; // Air
+					else
+						next_state = mat_diag_r; // Air
+				}
+				else if(diag_left) next_state = mat_diag_l; // Air
+				else if(diag_right) next_state = mat_diag_r; // Air
 			}
-			else if(diag_left) next_state = mat_diag_l; // Air
-			else if(diag_right) next_state = mat_diag_r; // Air
 		}
-	}
-	else if(cell.mat == Air) {
-		int mat_up = get_mat(coord + ivec2(0, -1));
-		if(mat_up == Sand) next_state = Sand;
-		else {
-			int mat_diag_r = get_mat(coord + ivec2(1, -1));
-			int mat_diag_l = get_mat(coord + ivec2(-1, -1));
-			int mat_r = get_mat(coord + ivec2(1, 0));
-			int mat_l = get_mat(coord + ivec2(-1, 0));
+		else if(cell.mat == Air) {
+			int mat_up = get_mat(coord + ivec2(0, -1));
+			if(mat_up == Sand) next_state = Sand;
+			else {
+				int mat_diag_r = get_mat(coord + ivec2(1, -1));
+				int mat_diag_l = get_mat(coord + ivec2(-1, -1));
+				int mat_r = get_mat(coord + ivec2(1, 0));
+				int mat_l = get_mat(coord + ivec2(-1, 0));
 
-			bool left = mat_diag_l == Sand && mat_l != Air;
-			bool right = mat_diag_r == Sand && mat_r != Air;
-			
-			if(left && right)
-				next_state = coin(coord, params.frame_count) ? Sand : Air;
-			else if(left)  next_state = Sand;
-			else if(right) next_state = Sand;
+				bool left = mat_diag_l == Sand && mat_l != Air;
+				bool right = mat_diag_r == Sand && mat_r != Air;
+				
+				if(left && right)
+					next_state = coin(coord, params.frame_count) ? Sand : Air;
+				else if(left)  next_state = Sand;
+				else if(right) next_state = Sand;
+			}
 		}
 	}
 
@@ -183,10 +190,10 @@ void main() {
 		vec2 diff = vec2(coord) - params.mouse_pos;
 		if (length(diff) <= params.brush_size) {
 			if (params.draw_mode == 1) { // Draw Sand
-				if (coin(coord, params.frame_count)) next_state = Sand;
+				if (next_state == Air && coin(coord, params.frame_count)) next_state = Sand;
 			}
-			else if (params.draw_mode == 2) { // Draw Wall
-				next_state = Stone;
+			else if (params.draw_mode == 2) { // Draw Stone
+				if (next_state == Air) next_state = Stone;
 			}
 			else if (params.draw_mode == 3) { // Erase
 				next_state = Air;
@@ -197,4 +204,5 @@ void main() {
 	vec4 out_color = encode(next_state);
 
 	imageStore(output_grid, coord, out_color);
+
 }
