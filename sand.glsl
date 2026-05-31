@@ -316,7 +316,7 @@ void update_marg(ivec2 coord) {
 }
 
 void main() {
-	int method = 1;
+	int method = 0;
 	ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
 	if (coord.x >= WIDTH || coord.y >= HEIGHT) return;
 	if (params.is_frozen == 0) {
