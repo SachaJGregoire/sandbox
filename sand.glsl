@@ -8,12 +8,12 @@ layout(set = 0, binding = 1, rgba32f) uniform writeonly image2D output_grid;
 // We use Push Constants to quickly send mouse input from GDScript
 layout(push_constant, std430) uniform Params {
 vec2 mouse_pos;    // 8 bytes (offsets 0-7)
-	float brush_size;  // 4 bytes (offsets 8-11)
-	int draw_mode;     // 4 bytes (offsets 12-15) <-- Change this back!
-	int frame_count;   // 4 bytes (offsets 16-19)
-	int is_frozen;     // 4 bytes (offsets 20-23)
-	int do_reset;      // 4 bytes (offsets 24-27)
-	float pad2;        // 4 bytes (offsets 28-31)
+    float brush_size;  // 4 bytes (offsets 8-11)
+    int draw_mode;     // 4 bytes (offsets 12-15) <-- Change this back!
+    int frame_count;   // 4 bytes (offsets 16-19)
+    int is_frozen;     // 4 bytes (offsets 20-23)
+    int do_reset;      // 4 bytes (offsets 24-27)
+    int offset_idx;        // 4 bytes (offsets 28-31)
 } params;
 
 float hash2t(vec2 p, int frame) {
@@ -175,16 +175,141 @@ void update(ivec2 coord) {
 	imageStore(output_grid, coord, encode(next_state));
 }
 
+
+
+struct Entry {
+    ivec4 key;
+    ivec4 value;
+};
+
+const int MAP_SIZE = 16;
+Entry map[MAP_SIZE] = Entry[MAP_SIZE](
+// NO SAND
+    Entry(ivec4(0, 0,
+				0, 0),
+		  ivec4(0, 0,
+		  		0, 0)),
+
+// ONE SAND
+    Entry(ivec4(1, 0,
+				0, 0),
+		  ivec4(0, 0,
+		  		1, 0)),
+
+    Entry(ivec4(0, 1,
+				0, 0),
+		  ivec4(0, 0,
+		  		0, 1)),
+
+    Entry(ivec4(0, 0,
+				1, 0),
+		  ivec4(0, 0,
+		  		1, 0)),
+
+    Entry(ivec4(0, 0,
+				0, 1),
+		  ivec4(0, 0,
+		  		0, 1)),
+
+// TWO SANDS
+    Entry(ivec4(1, 1,
+				0, 0),
+		  ivec4(0, 0,
+		  		1, 1)),
+
+    Entry(ivec4(1, 0,
+				1, 0),
+		  ivec4(0, 0,
+		  		1, 1)),
+
+    Entry(ivec4(1, 0,
+				0, 1),
+		  ivec4(0, 0,
+		  		1, 1)),
+
+    Entry(ivec4(0, 1,
+				1, 0),
+		  ivec4(0, 0,
+		  		1, 1)),
+
+    Entry(ivec4(0, 1,
+				0, 1),
+		  ivec4(0, 0,
+		  		1, 1)),
+
+    Entry(ivec4(0, 0,
+				1, 1),
+		  ivec4(0, 0,
+		  		1, 1)),
+
+// THREE SANDS
+	Entry(ivec4(0, 1,
+				1, 1),
+		  ivec4(0, 1,
+		  		1, 1)),
+
+	Entry(ivec4(1, 0,
+				1, 1),
+		  ivec4(1, 0,
+		  		1, 1)),
+
+	Entry(ivec4(1, 1,
+				0, 1),
+		  ivec4(0, 1,
+		  		1, 1)),
+
+	Entry(ivec4(1, 1,
+				1, 0),
+		  ivec4(1, 0,
+		  		1, 1)),
+
+// FOUR SANDS
+	Entry(ivec4(1, 1,
+				1, 1),
+		  ivec4(1, 1,
+		  		1, 1))
+);
+
+ivec4 lookup(ivec4 key) {
+    for (int i = 0; i < MAP_SIZE; i++) {
+        if (map[i].key == key) return map[i].value;
+    }
+    return key;
+}
+
 void update_marg(ivec2 coord) {
+	int offset_x = (params.offset_idx == 1 || params.offset_idx == 2) ? 1 : 0;
+	int offset_y = (params.offset_idx == 1 || params.offset_idx == 3) ? 1 : 0;
+	if (coord.x % 2 != offset_x || coord.y % 2 != offset_y) return;
+	// TODO: Borders
+	if (coord.x + 1 == WIDTH && coord.y + 1 == HEIGHT) {
+		imageStore(output_grid, coord, encode(get_mat(coord)));
+		return;
+	}
+	else if (coord.x + 1 == WIDTH) {
+		imageStore(output_grid, coord, encode(get_mat(coord)));
+		imageStore(output_grid, coord + ivec2(0, 1), encode(get_mat(coord + ivec2(0, 1))));
+		return;
+	}
+	else if (coord.y + 1 == HEIGHT) {
+		imageStore(output_grid, coord, encode(get_mat(coord)));
+		imageStore(output_grid, coord + ivec2(1, 0), encode(get_mat(coord + ivec2(1, 0))));
+		return;
+	}
 	Particle TL = decode(imageLoad(input_grid, coord));
 	Particle TR = decode(imageLoad(input_grid, coord + ivec2(1, 0)));
 	Particle BL = decode(imageLoad(input_grid, coord + ivec2(0, 1)));
 	Particle BR = decode(imageLoad(input_grid, coord + ivec2(1, 1)));
-	//if (TL.state == Solid + TR.state == Solid + BL.state == Solid + BR.state == Solid > 2)
+	ivec4 key = ivec4(TL.mat, TR.mat, BL.mat, BR.mat);
+	ivec4 res = lookup(key);
+	imageStore(output_grid, coord, encode(res.x));
+	imageStore(output_grid, coord + ivec2(1, 0), encode(res.y));
+	imageStore(output_grid, coord + ivec2(0, 1), encode(res.z));
+	imageStore(output_grid, coord + ivec2(1, 1), encode(res.w));
 }
 
 void main() {
-	int method = 0;
+	int method = 1;
 	ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
 	if (coord.x >= WIDTH || coord.y >= HEIGHT) return;
 	if (params.is_frozen == 0) {
