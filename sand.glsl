@@ -105,73 +105,80 @@ void update(ivec2 coord) {
 
 	// Alternating slide direction prevents parallel particle collisions
 	int slide_dir = (params.frame_count % 2 == 0) ? -1 : 1;
+	int v_velocity = 3;
+	int d_velocity = 5;
 
-	if(cell.state == Solid) {
-		int mat_down = get_mat(coord + ivec2(0, 1));
-	 	
-		if(mat_down == Air) next_state = Air;
-		else {
-			int mat_diag_r = get_mat(coord + ivec2(1, 1));
-			int mat_diag_l = get_mat(coord + ivec2(-1, 1));
-			int mat_r = get_mat(coord + ivec2(1, 0));
-			int mat_l = get_mat(coord + ivec2(-1, 0));
-
-			bool diag_left = (mat_diag_l == Air) && mat_l != Air;
-			bool diag_right = (mat_diag_r == Air) && mat_r != Air;
-
-			if(diag_left && diag_right) {
-				if(coin(coord, params.frame_count))
-					next_state = mat_diag_l; // Air
-				else
-					next_state = mat_diag_r; // Air
-			}
-			else if(diag_left) next_state = mat_diag_l; // Air
-			else if(diag_right) next_state = mat_diag_r; // Air
-		}
-	} else if(cell.mat == Air) {
-		int mat_up = get_mat(coord + ivec2(0, -1));
-		if(mat_up == Sand) next_state = Sand;
-		else {
-			int mat_diag_r = get_mat(coord + ivec2(1, -1));
-			int mat_diag_l = get_mat(coord + ivec2(-1, -1));
-			int mat_r = get_mat(coord + ivec2(1, 0));
-			int mat_l = get_mat(coord + ivec2(-1, 0));
-
-			bool left = mat_diag_l == Sand && mat_l != Air;
-			bool right = mat_diag_r == Sand && mat_r != Air;
-			
-			if(left && right)
-				next_state = coin(coord, params.frame_count) ? Sand : Air;
-			else if(left && coin(coord + ivec2(-1, -1), params.frame_count))  next_state = Sand;
-			else if(right && coin(coord + ivec2(1, -1), params.frame_count)) next_state = Sand;
-		}
-	}
-
-	// else if (cell.state == Solid) {
-	// 	int down = get_state(coord + ivec2(0, 1));
-	// 	int state_diag_r = get_state(coord + ivec2(1, 1));
-	// 	int state_diag_l = get_state(coord + ivec2(-1, 1));
-	// 	int state_r = get_state(coord + ivec2(1, 0));
-	// 	int state_l = get_state(coord + ivec2(-1, 0));
-
-	// 	bool diag_left = (state_diag_l == Gas || state_diag_l == Liquid) && state_l != Solid && state_l != Static;
-	// 	bool diag_right = (state_diag_r == Gas || state_diag_r == Liquid) && state_r != Solid && state_r != Static;
-
-	//     if (state_up == Gas || state_up == Liquid) {
-	//         next_state = get_mat(coord + ivec2(0, 1));
-	//     }
-	//     else if (diag_left && diag_right)
-	// 		if(coin(coord, params.frame_count))
-	//         	next_state = get_mat(coord + ivec2(-1, 1));
-	// 		else
-	// 			next_state = get_mat(coord + ivec2(1, 1));
-	//     }
-	// 	else if (diag_left) next_state = get_mat(coord + ivec2(-1, 1));
-	// 	else next_state = get_mat(coord + ivec2(1, 1));
-	// } 
-	// else if (cell.state == Gas || ) {
-	//     // tricky ?
-	// }
+    if (cell.mat == Sand) {
+		int max_v = 0;
+        for(int i = 1; i <= v_velocity; i++) {
+            if (get_mat(coord + ivec2(0, i)) == Air) {
+                max_v = i;
+            } else {
+                break;
+            }
+        }
+        if (max_v > 0) {
+            next_state = Air; 
+        } else {
+            int max_d = 0;
+            for (int i = 1; i <= d_velocity; i++) {
+                int mat_diag = get_mat(coord + ivec2(slide_dir * i, i));
+                int mat_side = get_mat(coord + ivec2(slide_dir * i, i - 1));
+                if (mat_diag == Air && mat_side == Air) {
+                    max_d = i;
+                } else {
+                    break;
+                }
+            }
+            if (max_d > 0 && coin(coord, params.frame_count)) {
+                next_state = Air;
+            }
+        }
+    } 
+    else if (cell.mat == Air) {
+		bool receiving_v = false;
+        for (int i = 1; i <= v_velocity; i++) {
+            int mat_up = get_mat(coord + ivec2(0, -i));
+            if (mat_up == Sand) {
+                int mat_below = get_mat(coord + ivec2(0, 1));                
+                if (mat_below != Air || i == v_velocity) {
+                    receiving_v = true;
+                }
+                break;
+            } 
+            else if (mat_up != Air) {
+                break;
+            }
+        }
+        if (receiving_v) {
+            next_state = Sand;
+        } else {
+            for (int i = 1; i <= d_velocity; i++) {
+                ivec2 source_coord = coord + ivec2(-slide_dir * i, -i);
+                int source_mat = get_mat(source_coord);
+                if (source_mat != Air) {
+                    if (source_mat == Sand) {
+                        if (get_mat(source_coord + ivec2(0, 1)) != Air) {
+                            int max_d = 0;
+                            for (int k = 1; k <= d_velocity; k++) {
+                                int mat_diag = get_mat(source_coord + ivec2(slide_dir * k, k));
+                                int mat_side = get_mat(source_coord + ivec2(slide_dir * k, k - 1));
+                                if (mat_diag == Air && mat_side == Air) {
+                                    max_d = k;
+                                } else {
+                                    break;
+                                }
+                            }
+                            if (max_d == i && coin(source_coord, params.frame_count)) {
+                                next_state = Sand;
+                            }
+                        }
+                    }
+                    break; 
+                }
+            }
+        }
+    }    
 	imageStore(output_grid, coord, encode(next_state));
 }
 
