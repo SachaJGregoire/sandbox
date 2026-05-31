@@ -99,7 +99,7 @@ int get_mat(ivec2 p) {
 	return decode(imageLoad(input_grid, p)).mat;
 }
 
-int update(ivec2 coord) {
+void update(ivec2 coord) {
 	Particle cell = decode(imageLoad(input_grid, coord));
 	int next_state = cell.mat;
 
@@ -172,27 +172,25 @@ int update(ivec2 coord) {
 	// else if (cell.state == Gas || ) {
 	//     // tricky ?
 	// }
-	return next_state;
+	imageStore(output_grid, coord, encode(next_state));
 }
 
-int update_marg(ivec2 coord) {
+void update_marg(ivec2 coord) {
 	Particle TL = decode(imageLoad(input_grid, coord));
 	Particle TR = decode(imageLoad(input_grid, coord + ivec2(1, 0)));
 	Particle BL = decode(imageLoad(input_grid, coord + ivec2(0, 1)));
 	Particle BR = decode(imageLoad(input_grid, coord + ivec2(1, 1)));
-	//if (TL.state == Solid + TR.state == Solid + BL.state == Solid + BR.state == Solid > 2) return Stone; // Placeholder
-	return Stone;
+	//if (TL.state == Solid + TR.state == Solid + BL.state == Solid + BR.state == Solid > 2)
 }
 
 void main() {
 	int method = 0;
 	ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
 	if (coord.x >= WIDTH || coord.y >= HEIGHT) return;
-	int next_state = get_mat(coord);
 	if (params.is_frozen == 0) {
 		switch (method) {
-			case 0: next_state = update(coord); 		break;
-			case 1: next_state = update_marg(coord);	break;
+			case 0: update(coord); 		break;
+			case 1: update_marg(coord);	break;
 		}
 	}
 	if (params.do_reset == 1) {
@@ -201,23 +199,19 @@ void main() {
     }
 
 	// Process Mouse Input
+	int next_state = get_mat(coord);
 	if (params.draw_mode > 0) {
 		vec2 diff = vec2(coord) - params.mouse_pos;
 		if (length(diff) <= params.brush_size) {
 			if (params.draw_mode == 1) { // Draw Sand
-				if (next_state == Air && coin(coord, params.frame_count)) next_state = Sand;
+				if (next_state == Air && coin(coord, params.frame_count)) imageStore(output_grid, coord, encode(Sand));
 			}
 			else if (params.draw_mode == 2) { // Draw Stone
-				if (next_state == Air) next_state = Stone;
+				if (next_state == Air) imageStore(output_grid, coord, encode(Stone));
 			}
 			else if (params.draw_mode == 3) { // Erase
-				next_state = Air;
+				imageStore(output_grid, coord, encode(Air));
 			}
 		}
 	}
-
-	vec4 out_color = encode(next_state);
-
-	imageStore(output_grid, coord, out_color);
-
 }
