@@ -27,15 +27,18 @@ class Grid {
 private:
     size_t width, height;
     std::vector<Mat> cells;
-    // TODO: atomic/lock or just ignore kekw
     std::vector<bool> updated;
     bool margolus_offset_X = 0;
     bool margolus_offset_Y = 0;
     double topple_counter = 0;
+    size_t num_threads = 16;
+    std::vector<std::thread> threads;
 
 public:
     Grid() {}
-    Grid(size_t w, size_t h) : width(w), height(h), cells(w*h), updated(w*h) {}
+    Grid(size_t w, size_t h) : width(w), height(h), cells(w*h), updated(w*h) {
+        threads.resize(num_threads - 1);
+    }
     void preset(size_t preset);
 
     // Getters, setters, swappers
@@ -66,7 +69,7 @@ public:
     // check if the square is a valid square
     bool check_valid(size_t x_cur, size_t y_cur, size_t x_next, size_t y_next, bool dispersion = false) {
         if (x_next >= width || y_next >= height || updated[x_next + width * y_next]) return false;
-        // TODO: either Mat::Air or density == 0
+        // Either Mat::Air or density == 0
         if (dispersion) return part(x_next, y_next).m == Mat::Air;
         return part(x_cur, y_cur).density > part(x_next, y_next).density;
     }

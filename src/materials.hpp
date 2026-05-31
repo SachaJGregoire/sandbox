@@ -18,12 +18,12 @@ enum class State {
     Liquid,
     Gas
 };
+// Can change order or make constructors or something smart
 struct Particle {
 	Mat m;
     std::string name;
     State state = State::Static;
 	uint8_t density = 0;
-    // TODO: change order or make constructors or something smart
     double topple_prob = 0;
     uint8_t dispertion_rate = 0;
 };

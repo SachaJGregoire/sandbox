@@ -4,7 +4,7 @@ Particle properties[256] = {
 //   material, 		name,       state, 			density, topple_prob, dispertion_rate	
 	{Mat::Air, 		"Air",      State::Gas, 	0},
 	{Mat::Sand, 	"Sand",     State::Solid, 	100, 	 0.5},
-	{Mat::Water, 	"Water",    State::Liquid, 	50,      0,           5},
+	{Mat::Water, 	"Water",    State::Liquid, 	50,      0,           10},
 	{Mat::Stone, 	"Stone",    State::Static, 	100},
     {Mat::Vapor, 	"Vapor",    State::Gas, 	30,      0,           5},
 };

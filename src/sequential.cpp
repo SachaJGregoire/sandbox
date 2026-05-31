@@ -24,20 +24,17 @@ void Grid::update_seq_thread(size_t x_start, size_t y_start, size_t x_end, size_
 }
 
 void Grid::update_seq_threaded() {
-	// This took forever. And it still causes stripes. But I do not know how to fix it.
-	// Making the stripes vertical would at least make them less visible, but not solve the actual problem.
-    size_t n = 16;
-    size_t num_stripes = 2 * n;
-    size_t stripe_h = height / (num_stripes - 1);
-    size_t offset = rand() % stripe_h;
+    size_t num_stripes = 2 * num_threads;
+    size_t stripe_w = (width + num_stripes - 2) / (num_stripes - 1);
+    size_t offset = rand() % stripe_w;
     for (int phase = 0; phase < 2; phase++) {
-        std::vector<std::thread> threads(n - 1);
-        for (size_t i = 0; i < n - 1; i++) {
-            size_t y0 = (2 * i + phase) * stripe_h + offset;
-            size_t y1 = std::min(y0 + stripe_h, height);
-            threads[i] = std::thread(&Grid::update_seq_thread, this, 0, y0, width, y1);
+        for (size_t i = 0; i < num_threads - 1; i++) {
+            size_t x0 = (2 * i + phase) * stripe_w + offset;
+            size_t x1 = x0 + stripe_w;
+            threads[i] = std::thread(&Grid::update_seq_thread, this, x0, 0, x1, height);
         }
-		if (phase == 0) update_seq_thread(0, 0, width, offset);
+		if (phase == 0) update_seq_thread((2 * num_threads - 3) * stripe_w + offset, 0, width, height);
+		if (phase == 1) update_seq_thread(0, 0, offset, height);
         for (auto &t : threads) t.join();
     }
 }
@@ -66,7 +63,7 @@ void Grid::update_cell(size_t x, size_t y) {
 	else if(diag_right) swap(x, y, x + 1, y + dir_ver);
 
 	// Sideways (IF YOU ADD A STATE OF MATTER, THIS CODE IS COOKED)
-	// TODO: Should not swap? But instead shift the row. Or something
+	// Note: Should probably not swap, but instead shift the row.
 	if(diag_left || diag_right || cur.state == State::Solid || (!left && !right)) return;
 	if (left && right) {
 		if (coin()) left = false;
