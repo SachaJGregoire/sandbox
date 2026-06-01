@@ -31,9 +31,9 @@ script = ExtResource("1_ig7tw")
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -332.0
+offset_left = -432.0
 offset_top = 24.0
-offset_right = 68.0
+offset_right = -20.0
 offset_bottom = 74.0
 grow_horizontal = 0
 
@@ -50,6 +50,12 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 17
 text = "Stone"
 
+[node name="WaterButton" type="Button" parent="TextureRect/CanvasLayer/HBoxContainer" unique_id=1224822898]
+custom_minimum_size = Vector2(100, 30)
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+text = "Water"
+
 [node name="AirButton" type="Button" parent="TextureRect/CanvasLayer/HBoxContainer" unique_id=1844384132]
 custom_minimum_size = Vector2(100, 30)
 layout_mode = 2
@@ -58,4 +64,5 @@ text = "Eraser"
 
 [connection signal="pressed" from="TextureRect/CanvasLayer/HBoxContainer/SandButton" to="TextureRect" method="select_sand"]
 [connection signal="pressed" from="TextureRect/CanvasLayer/HBoxContainer/StoneButton" to="TextureRect" method="select_stone"]
+[connection signal="pressed" from="TextureRect/CanvasLayer/HBoxContainer/WaterButton" to="TextureRect" method="select_water"]
 [connection signal="pressed" from="TextureRect/CanvasLayer/HBoxContainer/AirButton" to="TextureRect" method="select_air"]

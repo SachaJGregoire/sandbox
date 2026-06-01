@@ -209,3 +209,6 @@ func select_stone():
 func select_air():
 	selected_material = 3
 	print("Material: AIR")
+func select_water():
+	selected_material = 4
+	print("Material: AIR")
