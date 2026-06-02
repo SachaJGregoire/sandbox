@@ -7,8 +7,11 @@ var textures: Array[RID] = [RID(), RID()]
 var current_texture_index: int = 0
 var uniform_sets: Array[RID] = [RID(), RID()]
 
+var counter_buffer: RID
+
+
 const WIDTH: int = 512
-const HEIGHT: int = 512
+const HEIGHT: int = 512	
 const SHADER_PATH: String = "res://sand.glsl"
 
 var is_frozen: bool = false
@@ -32,6 +35,8 @@ func _ready():
 	
 	initialize_simple_pattern(textures[0])
 	initialize_simple_pattern(textures[1])
+	
+	counter_buffer = create_counter_buffer()
 	
 	if not create_compute_pipeline():
 		printerr("Failed to create pipeline!")
@@ -60,6 +65,14 @@ func create_texture() -> RID:
 						RenderingDevice.TEXTURE_USAGE_SAMPLING_BIT | \
 						RenderingDevice.TEXTURE_USAGE_CAN_COPY_FROM_BIT
 	return rd.texture_create(format, RDTextureView.new())
+
+func create_counter_buffer() -> RID:
+	var data = PackedInt32Array()
+	data.resize(3)
+	data[0] = 0  # sand
+	data[1] = 0  # water
+	data[2] = 0  # stone
+	return rd.storage_buffer_create(data.size() * 4, data.to_byte_array())
 
 func create_compute_pipeline() -> bool:
 	if not FileAccess.file_exists(SHADER_PATH):
@@ -104,7 +117,12 @@ func create_uniform_set(input_texture: RID, output_texture: RID) -> RID:
 	output_uniform.binding = 1
 	output_uniform.add_id(output_texture)
 	
-	return rd.uniform_set_create([input_uniform, output_uniform], shader, 0)
+	var counter_uniform = RDUniform.new()
+	counter_uniform.uniform_type = RenderingDevice.UNIFORM_TYPE_STORAGE_BUFFER
+	counter_uniform.binding = 2
+	counter_uniform.add_id(counter_buffer)
+	
+	return rd.uniform_set_create([input_uniform, output_uniform, counter_uniform], shader, 0)
 
 func _exit_tree():
 	if rd:
@@ -142,6 +160,12 @@ func initialize_simple_pattern(texture_rid: RID) -> void:
 			data[idx + 3] = 0
 			
 	rd.texture_update(texture_rid, 0, data.to_byte_array())
+
+func read_counters() -> Array:
+	var raw  = rd.buffer_get_data(counter_buffer)
+	var ints = raw.to_int32_array()
+	return [ints[0], ints[1], ints[2]]  # [sand, water, stone]
+
 
 func _gui_input(event):
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
@@ -198,6 +222,10 @@ func _process(_delta: float) -> void:
 	var tex_rd = Texture2DRD.new()
 	tex_rd.texture_rd_rid = textures[current_texture_index]
 	texture = tex_rd
+	
+	if total_frames % 30 == 0:
+		var counts = read_counters()
+		print("Sand: ", counts[0], " Water: ", counts[1], " Stone: ", counts[2])
 	
 
 func select_sand():
