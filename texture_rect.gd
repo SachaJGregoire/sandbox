@@ -161,44 +161,44 @@ func _process(_delta: float) -> void:
 	if not rd or not pipeline.is_valid():
 		return
 		
-	total_frames += 1
+	for i in range(4):
+		total_frames += 1
+		
+		var input_idx = current_texture_index
+		var output_idx = 1 - current_texture_index
+		
+		var compute_list = rd.compute_list_begin()
+		rd.compute_list_bind_compute_pipeline(compute_list, pipeline)
+		rd.compute_list_bind_uniform_set(compute_list, uniform_sets[input_idx], 0)
+		
+		var tex_mouse = get_local_mouse_to_texture()
+		var push_bytes = PackedByteArray()
+		push_bytes.resize(32) # must be mult of 16
+		
+		push_bytes.encode_float(0, tex_mouse.x)           					# vec2 mouse_pos.x
+		push_bytes.encode_float(4, tex_mouse.y)           					# vec2 mouse_pos.y
+		push_bytes.encode_float(8, brush_size)           					# float brush_size
+		push_bytes.encode_s32(12, selected_material if is_drawing else 0)   # int selected_material (0 if not drawing)
+		push_bytes.encode_s32(16, total_frames)           					# int frame_count
+		push_bytes.encode_s32(20, 1 if is_frozen else 0)  					# int is_frozen
+		push_bytes.encode_s32(24, 1 if do_reset else 0)   					# int do_reset
+		push_bytes.encode_s32(28, total_frames % 4)     					# int offset_idx (for Margolus)
+		
+		rd.compute_list_set_push_constant(compute_list, push_bytes, push_bytes.size())
+		# ---------------------------------------------
+		
+		var groups_x = (WIDTH + 15) / 16
+		var groups_y = (HEIGHT + 15) / 16
+		rd.compute_list_dispatch(compute_list, groups_x, groups_y, 1)
+		rd.compute_list_end()
 	
-	var input_idx = current_texture_index
-	var output_idx = 1 - current_texture_index
-	
-	var compute_list = rd.compute_list_begin()
-	rd.compute_list_bind_compute_pipeline(compute_list, pipeline)
-	rd.compute_list_bind_uniform_set(compute_list, uniform_sets[input_idx], 0)
-	
-	var tex_mouse = get_local_mouse_to_texture()
-	var push_bytes = PackedByteArray()
-	push_bytes.resize(32) # must be mult of 16
-	
-	push_bytes.encode_float(0, tex_mouse.x)           					# vec2 mouse_pos.x
-	push_bytes.encode_float(4, tex_mouse.y)           					# vec2 mouse_pos.y
-	push_bytes.encode_float(8, brush_size)           					# float brush_size
-	push_bytes.encode_s32(12, selected_material if is_drawing else 0)   # int selected_material (0 if not drawing)
-	push_bytes.encode_s32(16, total_frames)           					# int frame_count
-	push_bytes.encode_s32(20, 1 if is_frozen else 0)  					# int is_frozen
-	push_bytes.encode_s32(24, 1 if do_reset else 0)   					# int do_reset
-	push_bytes.encode_s32(28, total_frames % 4)     					# int offset_idx (for Margolus)
+		current_texture_index = output_idx
+		do_reset = 0
 
-	
-	rd.compute_list_set_push_constant(compute_list, push_bytes, push_bytes.size())
-	# ---------------------------------------------
-	
-	var groups_x = (WIDTH + 15) / 16
-	var groups_y = (HEIGHT + 15) / 16
-	rd.compute_list_dispatch(compute_list, groups_x, groups_y, 1)
-	rd.compute_list_end()
-	
 	var tex_rd = Texture2DRD.new()
-	tex_rd.texture_rd_rid = textures[output_idx]
+	tex_rd.texture_rd_rid = textures[current_texture_index]
 	texture = tex_rd
 	
-	current_texture_index = output_idx
-
-	do_reset = 0
 
 func select_sand():
 	selected_material = 1
@@ -211,4 +211,4 @@ func select_air():
 	print("Material: AIR")
 func select_water():
 	selected_material = 4
-	print("Material: AIR")
+	print("Material: WATER")

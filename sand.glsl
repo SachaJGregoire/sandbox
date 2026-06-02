@@ -7,7 +7,7 @@ layout(set = 0, binding = 1, rgba32f) uniform writeonly image2D output_grid;
 
 // We use Push Constants to quickly send mouse input from GDScript
 layout(push_constant, std430) uniform Params {
-vec2 mouse_pos;    // 8 bytes (offsets 0-7)
+	vec2 mouse_pos;    // 8 bytes (offsets 0-7)
     float brush_size;  // 4 bytes (offsets 8-11)
     int draw_mode;     // 4 bytes (offsets 12-15) <-- Change this back!
     int frame_count;   // 4 bytes (offsets 16-19)
@@ -103,35 +103,43 @@ void update(ivec2 coord) {
     Particle cell = decode(imageLoad(input_grid, coord));
     int next_state = cell.mat;
 
-	// Alternating slide direction prevents parallel particle collisions
-    int slide_dir = (params.frame_count % 2 == 0) ? -1 : 1;
+    int phase = params.frame_count % 4;
+    // 0 : HL (-1, 0)
+    // 1 : DL (-1, 1)
+    // 2 : HR ( 1, 0)
+    // 3 : DR ( 1, 1)
+
+    int move_x = (phase == 0 || phase == 1) ? -1 : 1; 
+    int move_y = (phase == 0 || phase == 2) ? 0 : 1;  
+
     int v_velocity = 2;
     int d_velocity = 4;
 
     if (cell.mat == Sand || cell.mat == Water) {
-        
         int max_v = 0;
         for(int i = 1; i <= v_velocity; i++) {
             if (get_mat(coord + ivec2(0, i)) == Air) max_v = i;
             else break;
         }
-        
         if (max_v > 0) {
             next_state = Air; 
         } else {
-            int max_d = 0;
-            for (int i = 1; i <= d_velocity; i++) {
-                int mat_diag = get_mat(coord + ivec2(slide_dir * i, i));
-                int mat_side = get_mat(coord + ivec2(slide_dir * i, i - 1));
-                if (mat_diag == Air && mat_side == Air) max_d = i;
-                else break;
-            }
-            
-            if (max_d > 0 && coin(coord, params.frame_count)) {
-                next_state = Air;
+            bool can_move = true;
+            if (cell.mat == Sand && move_y == 0) can_move = false;
+            if (can_move) {
+                int max_d = 0;
+                int check_vel = (move_y == 0) ? cell.dispertion_rate : d_velocity;
+                for (int i = 1; i <= check_vel; i++) {
+                    int mat_target = get_mat(coord + ivec2(move_x * i, move_y * i));
+                    int mat_side = get_mat(coord + ivec2(move_x * i, (move_y == 1) ? i - 1 : 0));
+                    if (mat_target == Air && mat_side == Air) max_d = i;
+                    else break;
+                }  
+                if (max_d > 0 && coin(coord, params.frame_count)) {
+                    next_state = Air;
+                }
             }
         }
-        
         if (next_state == cell.mat) { 
             if (cell.mat == Sand) {
                 if (get_mat(coord + ivec2(0, 1)) == Water) next_state = Water;
@@ -141,11 +149,9 @@ void update(ivec2 coord) {
             }
         }
     } 
-    
     else if (cell.mat == Air) {
         bool receiving = false;
         int incoming_mat = Air;
-
         for (int i = 1; i <= v_velocity; i++) {
             int mat_up = get_mat(coord + ivec2(0, -i));
             if (mat_up == Sand || mat_up == Water) {
@@ -160,24 +166,31 @@ void update(ivec2 coord) {
                 break;
             }
         }
-
         if (!receiving) {
-            for (int i = 1; i <= d_velocity; i++) {
-                ivec2 source_coord = coord + ivec2(-slide_dir * i, -i);
+            int max_possible_vel = max(d_velocity, properties[Water].dispertion_rate);
+            for (int i = 1; i <= max_possible_vel; i++) {
+                ivec2 source_coord = coord - ivec2(move_x * i, move_y * i);
                 int source_mat = get_mat(source_coord);
                 if (source_mat != Air) {
                     if (source_mat == Sand || source_mat == Water) {
                         if (get_mat(source_coord + ivec2(0, 1)) != Air) {
-                            int max_d = 0;
-                            for (int k = 1; k <= d_velocity; k++) {
-                                int mat_diag = get_mat(source_coord + ivec2(slide_dir * k, k));
-                                int mat_side = get_mat(source_coord + ivec2(slide_dir * k, k - 1));
-                                if (mat_diag == Air && mat_side == Air) max_d = k;
-                                else break;
-                            }
-                            if (max_d == i && coin(source_coord, params.frame_count)) {
-                                receiving = true;
-                                incoming_mat = source_mat;
+                            bool can_move = true;
+                            if (source_mat == Sand && move_y == 0) can_move = false;
+                            if (can_move) {
+                                int check_vel = (move_y == 0) ? properties[source_mat].dispertion_rate : d_velocity;
+                                if (i <= check_vel) {
+                                    int max_d = 0;
+                                    for (int k = 1; k <= check_vel; k++) {
+                                        int mat_target = get_mat(source_coord + ivec2(move_x * k, move_y * k));
+                                        int mat_side = get_mat(source_coord + ivec2(move_x * k, (move_y == 1) ? k - 1 : 0));
+                                        if (mat_target == Air && mat_side == Air) max_d = k;
+                                        else break;
+                                    }
+                                    if (max_d == i && coin(source_coord, params.frame_count)) {
+                                        receiving = true;
+                                        incoming_mat = source_mat;
+                                    }
+                                }
                             }
                         }
                     }
@@ -185,12 +198,10 @@ void update(ivec2 coord) {
                 }
             }
         }
-
         if (receiving) {
             next_state = incoming_mat;
         }
-    }    
-    
+	}
     imageStore(output_grid, coord, encode(next_state));
 }
 
