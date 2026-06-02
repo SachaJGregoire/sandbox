@@ -11,7 +11,7 @@ var counter_buffer: RID
 
 
 const WIDTH: int = 512
-const HEIGHT: int = 512	
+const HEIGHT: int = 512
 const SHADER_PATH: String = "res://sand.glsl"
 
 var is_frozen: bool = false
@@ -185,7 +185,7 @@ func _process(_delta: float) -> void:
 	if not rd or not pipeline.is_valid():
 		return
 		
-	for i in range(4):
+	for i in range(6):
 		total_frames += 1
 		
 		var input_idx = current_texture_index

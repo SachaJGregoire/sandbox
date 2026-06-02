@@ -106,109 +106,129 @@ int get_mat(ivec2 p) {
 }
 
 void update(ivec2 coord) {
-	Particle cell = decode(imageLoad(input_grid, coord));
-	int next_state = cell.mat;
+    Particle cell = decode(imageLoad(input_grid, coord));
+    int next_state = cell.mat;
 
-	int phase = params.frame_count % 4;
-	// 0 : HL (-1, 0)
-	// 1 : DL (-1, 1)
-	// 2 : HR ( 1, 0)
-	// 3 : DR ( 1, 1)
+    // 0, 1 : HL (-1,  0)
+    // 2    : DL (-1,  1)
+    // 3, 4 : HR ( 1,  0)
+    // 5    : DR ( 1,  1)
+	int phase = params.frame_count % 6;
+    int move_x = (phase < 3) ? -1 : 1; 
+    int move_y = (phase == 2 || phase == 5) ? 1 : 0;
 
-	int move_x = (phase == 0 || phase == 1) ? -1 : 1; 
-	int move_y = (phase == 0 || phase == 2) ? 0 : 1;  
+    // SAND LOGIC
+    if (cell.mat == Sand) {
+        int mat_below = get_mat(coord + ivec2(0, 1));
+        
+		// vertical fall
+        if (mat_below == Air) {
+            next_state = Air;
+        } 
+		// sink below water
+        else if (mat_below == Water) {
+            next_state = Water;
+        }
+		// diagonal fall
+        else if (move_y == 1) { 
+            int mat_target = get_mat(coord + ivec2(move_x, 1));
+            int mat_side = get_mat(coord + ivec2(move_x, 0));
+            
+            if (mat_target == Air && mat_side == Air && coin(coord, params.frame_count)) {
+                next_state = Air;
+            }
+        }
+    } 
+    
+    // WATER LOGIC
+    else if (cell.mat == Water) {
+        int mat_above = get_mat(coord + ivec2(0, -1));
+        int mat_below = get_mat(coord + ivec2(0, 1));
+        
+		// rise above sand
+        if (mat_above == Sand) {
+            next_state = Sand;
+        }
+		// vertical fall
+        else if (mat_below == Air) {
+            next_state = Air;
+        } 
+		// horizontal or diagonal fall
+        else {
+            int mat_target = get_mat(coord + ivec2(move_x, move_y));
+            int mat_side = get_mat(coord + ivec2(move_x, 0));
+            
+            bool can_move = false;
+            if (move_y == 1) {
+                can_move = (mat_target == Air && mat_side == Air);
+            } else {
+                can_move = (mat_target == Air);
+            }
+            
+            if (can_move && coin(coord, params.frame_count)) {
+                int mat_target_up = get_mat(coord + ivec2(move_x, move_y - 1));
+                if (mat_target_up != Sand && mat_target_up != Water) {
+                    next_state = Air;
+                }
+            }
+        }
+    } 
+    
+    // AIR LOGIC
+    else if (cell.mat == Air) {
+        bool receiving = false;
+        int incoming_mat = Air;
 
-	int v_velocity = 2;
-	int d_velocity = 4;
+        int mat_up = get_mat(coord + ivec2(0, -1));
+        // vertical sand fall
+        if (mat_up == Sand) {
+            receiving = true;
+            incoming_mat = Sand;
+        } 
+		// vertical water fall
+        else if (mat_up == Water) {
+            if (get_mat(coord + ivec2(0, -2)) != Sand) {
+                receiving = true;
+                incoming_mat = Water;
+            }
+        }
 
-	if (cell.mat == Sand || cell.mat == Water) {
-		int max_v = 0;
-		for(int i = 1; i <= v_velocity; i++) {
-			if (get_mat(coord + ivec2(0, i)) == Air) max_v = i;
-			else break;
-		}
-		if (max_v > 0) {
-			next_state = Air; 
-		} else {
-			bool can_move = true;
-			if (cell.mat == Sand && move_y == 0) can_move = false;
-			if (can_move) {
-				int max_d = 0;
-				int check_vel = (move_y == 0) ? cell.dispertion_rate : d_velocity;
-				for (int i = 1; i <= check_vel; i++) {
-					int mat_target = get_mat(coord + ivec2(move_x * i, move_y * i));
-					int mat_side = get_mat(coord + ivec2(move_x * i, (move_y == 1) ? i - 1 : 0));
-					if (mat_target == Air && mat_side == Air) max_d = i;
-					else break;
-				}  
-				if (max_d > 0 && coin(coord, params.frame_count)) {
-					next_state = Air;
-				}
-			}
-		}
-		if (next_state == cell.mat) { 
-			if (cell.mat == Sand) {
-				if (get_mat(coord + ivec2(0, 1)) == Water) next_state = Water;
-			} 
-			else if (cell.mat == Water) {
-				if (get_mat(coord + ivec2(0, -1)) == Sand) next_state = Sand;
-			}
-		}
-	} 
-	else if (cell.mat == Air) {
-		bool receiving = false;
-		int incoming_mat = Air;
-		for (int i = 1; i <= v_velocity; i++) {
-			int mat_up = get_mat(coord + ivec2(0, -i));
-			if (mat_up == Sand || mat_up == Water) {
-				int mat_below = get_mat(coord + ivec2(0, 1));                
-				if (mat_below != Air || i == v_velocity) {
-					receiving = true;
-					incoming_mat = mat_up;
-				}
-				break;
-			} 
-			else if (mat_up != Air) {
-				break;
-			}
-		}
-		if (!receiving) {
-			int max_possible_vel = max(d_velocity, properties[Water].dispertion_rate);
-			for (int i = 1; i <= max_possible_vel; i++) {
-				ivec2 source_coord = coord - ivec2(move_x * i, move_y * i);
-				int source_mat = get_mat(source_coord);
-				if (source_mat != Air) {
-					if (source_mat == Sand || source_mat == Water) {
-						if (get_mat(source_coord + ivec2(0, 1)) != Air) {
-							bool can_move = true;
-							if (source_mat == Sand && move_y == 0) can_move = false;
-							if (can_move) {
-								int check_vel = (move_y == 0) ? properties[source_mat].dispertion_rate : d_velocity;
-								if (i <= check_vel) {
-									int max_d = 0;
-									for (int k = 1; k <= check_vel; k++) {
-										int mat_target = get_mat(source_coord + ivec2(move_x * k, move_y * k));
-										int mat_side = get_mat(source_coord + ivec2(move_x * k, (move_y == 1) ? k - 1 : 0));
-										if (mat_target == Air && mat_side == Air) max_d = k;
-										else break;
-									}
-									if (max_d == i && coin(source_coord, params.frame_count)) {
-										receiving = true;
-										incoming_mat = source_mat;
-									}
-								}
-							}
-						}
-					}
-					break;
-				}
-			}
-		}
-		if (receiving) {
-			next_state = incoming_mat;
-		}
-	}
-	imageStore(output_grid, coord, encode(next_state));
+        if (!receiving) {
+            ivec2 source_coord = coord - ivec2(move_x, move_y);
+            int source_mat = get_mat(source_coord);
+            
+			// diagonal sand fall
+            if (source_mat == Sand && move_y == 1) {
+                int mat_below_source = get_mat(source_coord + ivec2(0, 1));
+                if (mat_below_source != Air && mat_below_source != Water) {
+                    int mat_side = get_mat(source_coord + ivec2(move_x, 0));
+
+                    if (mat_side == Air && coin(source_coord, params.frame_count)) {
+                        receiving = true;
+                        incoming_mat = Sand;
+                    }
+                }
+            } 
+			// horizontal or diagonal water fall
+            else if (source_mat == Water) {
+                int mat_below_source = get_mat(source_coord + ivec2(0, 1));
+                int mat_above_source = get_mat(source_coord + ivec2(0, -1));
+
+                if (mat_below_source != Air && mat_above_source != Sand) {
+                    bool valid_path = (move_y == 0) || (get_mat(source_coord + ivec2(move_x, 0)) == Air);
+                    if (valid_path && coin(source_coord, params.frame_count)) {
+                        receiving = true;
+                        incoming_mat = Water;
+                    }
+                }
+            }
+        }
+
+        if (receiving) {
+            next_state = incoming_mat;
+        }
+    }
+    imageStore(output_grid, coord, encode(next_state));
 }
 
 
@@ -345,7 +365,7 @@ void update_marg(ivec2 coord) {
 }
 
 void main() {
-	int method = 1;
+	int method = 0;
 	ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
 	if (coord.x >= WIDTH || coord.y >= HEIGHT) return;
 	if (params.is_frozen == 0) {
