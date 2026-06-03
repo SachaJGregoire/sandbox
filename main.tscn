@@ -104,9 +104,13 @@ layout_mode = 2
 
 [node name="Status" type="VBoxContainer" parent="TextureRect/CanvasLayer" unique_id=1244601840]
 offset_left = 10.0
-offset_top = 845.0
+offset_top = 815.0
 offset_right = 166.0
-offset_bottom = 922.0
+offset_bottom = 892.0
+
+[node name="FPS" type="Label" parent="TextureRect/CanvasLayer/Status" unique_id=1348368279]
+layout_mode = 2
+text = "FPS: 0"
 
 [node name="Simulation" type="Label" parent="TextureRect/CanvasLayer/Status" unique_id=184560283]
 layout_mode = 2
