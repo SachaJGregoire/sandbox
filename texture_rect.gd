@@ -229,7 +229,6 @@ func _process(_delta: float) -> void:
 		push_bytes.encode_s32(16, total_frames)           					# int frame_count
 		push_bytes.encode_s32(20, 1 if is_frozen else 0)  					# int is_frozen
 		push_bytes.encode_s32(24, 1 if do_reset else 0)   					# int do_reset
-		push_bytes.encode_s32(28, total_frames % 4)     					# int offset_idx (for Margolus)
 		
 		rd.compute_list_set_push_constant(compute_list, push_bytes, push_bytes.size())
 		# ---------------------------------------------

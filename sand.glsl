@@ -13,23 +13,24 @@ layout(set = 0, binding = 2) buffer ParticleCounter {
 
 // We use Push Constants to quickly send mouse input from GDScript
 layout(push_constant, std430) uniform Params {
-	vec2 mouse_pos;    // 8 bytes (offsets 0-7)
-	float brush_size;  // 4 bytes (offsets 8-11)
-	int draw_mode;     // 4 bytes (offsets 12-15)
-	int frame_count;   // 4 bytes (offsets 16-19)
-	int is_frozen;     // 4 bytes (offsets 20-23)
-	int do_reset;      // 4 bytes (offsets 24-27)
-	int offset_idx;    // 4 bytes (offsets 28-31)
+	vec2 mouse_pos;    	// 8 bytes (offsets 0-7)
+	float brush_size;  	// 4 bytes (offsets 8-11)
+	int draw_mode;     	// 4 bytes (offsets 12-15)
+	int frame_count;   	// 4 bytes (offsets 16-19)
+	int is_frozen;     	// 4 bytes (offsets 20-23)
+	int do_reset;      	// 4 bytes (offsets 24-27)
+	int pad;    		// 4 bytes (offsets 28-31)
 } params;
 
 float hash2t(vec2 p, int frame) {
 	return fract(sin(dot(p, vec2(12.9898, 78.233)) + float(frame)) * 43758.5453);
 }
 
-bool coin(vec2 coord, int frame) {
+bool coin(vec2 coord, int frame, float threshold) {
 	float r = hash2t(coord, frame);
-	return r < 0.5;
+	return r < threshold;
 }
+bool coin(vec2 coord, int frame) { return coin(coord, frame, 0.5); }
 
 bool shimmer(vec2 coord, int frame) {
 	float r = hash2t(coord, frame + 7717);
@@ -69,7 +70,7 @@ struct Particle {
 	int mat;
 	int state;
 	int density;
-	float  topple_prob;
+	float topple_prob;
 	int dispertion_rate;
 };
 
@@ -77,9 +78,9 @@ const Particle properties[count_material] = Particle[count_material](
 //           mat,   state,  density, topple, dispersion
 	Particle(Air,   Gas,    0,   0.0,  0),
 	Particle(Sand,  Solid,  100, 0.5,  0),
-	Particle(Water, Liquid, 50,  0.0,  6),
-	Particle(Stone, Static, 100, 0.0,  0),
-	Particle(Vapor, Gas,    30,  0.0,  5)
+	Particle(Water, Liquid, 50,  1.0,  6),
+	Particle(Stone, Static, 255, 0.0,  0),
+	Particle(Vapor, Gas,    30,  1.0,  5)
 );
 
 
@@ -262,139 +263,341 @@ void update(ivec2 coord) {
 }
 
 
-struct Entry {
-	ivec4 key;
-	ivec4 value;
-};
 
-const int MAP_SIZE = 16;
-Entry map[MAP_SIZE] = Entry[MAP_SIZE](
-// NO SAND
-	Entry(ivec4(0, 0,
-				0, 0),
-		  ivec4(0, 0,
-		  		0, 0)),
+const int ERROR = -1;
+const int NONE	= 0;
+const int TLTR	= 1;
+const int TLBL	= 2;
+const int TLBR 	= 3;
+const int TRBL	= 4;
+const int TRBR	= 5;
+const int BLBR	= 6;
+const int TTBB	= 7;
 
-// ONE SAND
-	Entry(ivec4(1, 0,
-				0, 0),
-		  ivec4(0, 0,
-		  		1, 0)),
+const int marg[81] = int[81](
+	ERROR,	/*	0  (-1,-1,
+					-1,-1) */
+	TLBL,	/*	1  ( 0,-1,
+					-1,-1) */
+	ERROR,	/*	2  ( 1,-1,
+					-1,-1) */
+	TRBR,	/*	3  (-1, 0,
+					-1,-1) */
+	TTBB,	/*	4  ( 0, 0,
+					-1,-1) */
+	TRBR, 	/*	5  ( 1, 0,
+					-1,-1) */
+	ERROR,	/*	6  (-1, 1,
+					-1,-1) */
+	TLBL,	/*	7  ( 0, 1,
+					-1,-1) */
+	ERROR,	/*	8  ( 1, 1,
+					-1,-1) */
 
-	Entry(ivec4(0, 1,
-				0, 0),
-		  ivec4(0, 0,
-		  		0, 1)),
+	BLBR,	/*	9  (-1,-1,
+					 0,-1) */
+	TLBR,	/* 10 ( 0,-1,
+					0,-1) */
+	BLBR,	/* 11 ( 1,-1,
+					0,-1) */
+	TRBR,	/* 12 (-1, 0,
+					0,-1) */
+	TRBR,	/* 13 ( 0, 0,
+					0,-1) */
+	TRBR,	/* 14 ( 1, 0,
+					0,-1) */
+	BLBR,	/* 15 (-1, 1,
+					0,-1) */
+	BLBR,	/* 16 ( 0, 1,
+					0,-1) */
+	BLBR,	/* 17 ( 1, 1,
+					0,-1) */
 
-	Entry(ivec4(0, 0,
-				1, 0),
-		  ivec4(0, 0,
-		  		1, 0)),
+	ERROR,	/* 18 (-1,-1,
+					1,-1) */
+	TLBR,	/* 19 ( 0,-1,
+					1,-1) */
+	ERROR,	/* 20 ( 1,-1,
+					1,-1) */
+	TRBR,	/* 21 (-1, 0,
+					1,-1) */
+	TRBR,	/* 22 ( 0, 0,
+					1,-1) */
+	TRBR,	/* 23 ( 1, 0,
+					1,-1) */
+	ERROR,	/* 24 (-1, 1,
+					1,-1) */
+	NONE,	/* 25 ( 0, 1,
+					1,-1) */
+	ERROR,	/* 26 ( 1, 1,
+					1,-1) */
 
-	Entry(ivec4(0, 0,
-				0, 1),
-		  ivec4(0, 0,
-		  		0, 1)),
+	NONE,	/* 27 (-1,-1,
+					1, 0) */
+	TLTR,	/* 28 ( 0,-1,
+					1, 0) */
+	NONE,	/* 29 ( 1,-1,
+					1, 0) */
+	TLTR,	/* 30 (-1, 0,
+					1, 0) */
+	NONE,	/* 31 ( 0, 0,
+					1, 0) */
+	NONE,	/* 32 ( 1, 0,
+					1, 0) */
+	NONE,	/* 33 (-1, 1,
+					1, 0) */
+	NONE,	/* 34 ( 0, 1,
+					1, 0) */
+	NONE,	/* 35 ( 1, 1,
+					1, 0) */
 
-// TWO SANDS
-	Entry(ivec4(1, 1,
-				0, 0),
-		  ivec4(0, 0,
-		  		1, 1)),
+	NONE,	/* 36 (-1,-1,
+					0, 0) */
+	TLTR,	/* 37 ( 0,-1,
+					0, 0) */
+	NONE,	/* 38 ( 1,-1,
+					0, 0) */
+	TLTR,	/* 39 (-1, 0,
+					0, 0) */
+	NONE,	/* 40 ( 0, 0,
+					0, 0) */
+	NONE,	/* 41 ( 1, 0,
+					0, 0) */
+	NONE,	/* 42 (-1, 1,
+					0, 0) */
+	NONE,	/* 43 ( 0, 1,
+					0, 0) */
+	NONE,	/* 44 ( 1, 1,
+					0, 0) */
 
-	Entry(ivec4(1, 0,
-				1, 0),
-		  ivec4(0, 0,
-		  		1, 1)),
+	NONE,	/* 45 (-1,-1,
+					1, 0) */
+	TLTR,	/* 46 ( 0,-1,
+					1, 0) */
+	NONE,	/* 47 ( 1,-1,
+					1, 0) */
+	TLTR,	/* 48 (-1, 0,
+					1, 0) */
+	NONE,	/* 49 ( 0, 0,
+					1, 0) */
+	NONE,	/* 50 ( 1, 0,
+					1, 0) */
+	NONE,	/* 51 (-1, 1,
+					1, 0) */
+	NONE,	/* 52 ( 0, 1,
+					1, 0) */
+	NONE,	/* 53 ( 1, 1,
+					1, 0) */
 
-	Entry(ivec4(1, 0,
-				0, 1),
-		  ivec4(0, 0,
-		  		1, 1)),
+	ERROR,	/* 54 (-1,-1,
+					1, 1) */
+	TLTR,	/* 55 ( 0,-1,
+					1, 1) */
+	ERROR,	/* 56 ( 1,-1,
+					1, 1) */
+	TLTR,	/* 57 (-1, 0,
+					1, 1) */
+	NONE,	/* 58 ( 0, 0,
+					1, 1) */
+	NONE,	/* 59 ( 1, 0,
+					1, 1) */
+	ERROR,	/* 60 (-1, 1,
+					1, 1) */
+	NONE,	/* 61 ( 0, 1,
+					1, 1) */
+	ERROR,	/* 62 ( 1, 1,
+					1, 1) */
 
-	Entry(ivec4(0, 1,
-				1, 0),
-		  ivec4(0, 0,
-		  		1, 1)),
+	NONE,	/* 63 (-1,-1,
+					0, 1) */
+	TLTR,	/* 64 ( 0,-1,
+					0, 1) */
+	NONE,	/* 65 ( 1,-1,
+					0, 1) */
+	TLTR,	/* 66 (-1, 0,
+					0, 1) */
+	NONE,	/* 67 ( 0, 0,
+					0, 1) */
+	NONE,	/* 68 ( 1, 0,
+					0, 1) */
+	NONE,	/* 69 (-1, 1,
+					0, 1) */
+	NONE,	/* 70 ( 0, 1,
+					0, 1) */
+	NONE,	/* 71 ( 1, 1,
+					0, 1) */
 
-	Entry(ivec4(0, 1,
-				0, 1),
-		  ivec4(0, 0,
-		  		1, 1)),
-
-	Entry(ivec4(0, 0,
-				1, 1),
-		  ivec4(0, 0,
-		  		1, 1)),
-
-// THREE SANDS
-	Entry(ivec4(0, 1,
-				1, 1),
-		  ivec4(0, 1,
-		  		1, 1)),
-
-	Entry(ivec4(1, 0,
-				1, 1),
-		  ivec4(1, 0,
-		  		1, 1)),
-
-	Entry(ivec4(1, 1,
-				0, 1),
-		  ivec4(0, 1,
-		  		1, 1)),
-
-	Entry(ivec4(1, 1,
-				1, 0),
-		  ivec4(1, 0,
-		  		1, 1)),
-
-// FOUR SANDS
-	Entry(ivec4(1, 1,
-				1, 1),
-		  ivec4(1, 1,
-		  		1, 1))
+	ERROR,	/* 72 (-1,-1,
+					1, 1) */
+	TLTR,	/* 73 ( 0,-1,
+					1, 1) */
+	ERROR,	/* 74 ( 1,-1,
+					1, 1) */
+	TLTR,	/* 75 (-1, 0,
+					1, 1) */
+	NONE,	/* 76 ( 0, 0,
+					1, 1) */
+	NONE,	/* 77 ( 1, 0,
+					1, 1) */
+	ERROR,	/* 78 (-1, 1,
+					1, 1) */
+	NONE,	/* 79 ( 0, 1,
+					1, 1) */
+	ERROR	/* 80 ( 1, 1,
+					1, 1) */
 );
 
-ivec4 lookup(ivec4 key) {
-	for (int i = 0; i < MAP_SIZE; i++) {
-		if (map[i].key == key) return map[i].value;
-	}
-	return key;
+int lookup(ivec4 key) {
+	return marg[key.x + 3 * key.y + 9 * key.z + 27 * key.w];
+}
+
+void swap(inout vec4 a, inout vec4 b) {
+    vec4 tmp = a;
+    a = b;
+    b = tmp;
+}
+void swap(inout Particle a, inout Particle b) {
+    Particle tmp = a;
+    a = b;
+    b = tmp;
+}
+void swap(inout int a, inout int b) {
+    int tmp = a;
+    a = b;
+    b = tmp;
 }
 
 void update_marg(ivec2 coord) {
-	int offset_x = (params.offset_idx == 1 || params.offset_idx == 2) ? 1 : 0;
-	int offset_y = (params.offset_idx == 1 || params.offset_idx == 3) ? 1 : 0;
-	if (coord.x % 2 != offset_x || coord.y % 2 != offset_y) return;
 	// TODO: Borders
+	// Setting up offset
+	int offset = params.frame_count % 4;
+	int offset_x = (offset == 1 || offset == 2) ? 1 : 0;
+	int offset_y = (offset == 1 || offset == 3) ? 1 : 0;
+	if (coord.x % 2 != offset_x || coord.y % 2 != offset_y) return;
+
+	// Draws bottom and right boxes that would be out of bounds (NOT TOP OR LEFT BOXES)
 	if (coord.x + 1 == WIDTH && coord.y + 1 == HEIGHT) {
-		imageStore(output_grid, coord, encode(get_mat(coord)));
+		imageStore(output_grid, coord, imageLoad(input_grid, coord));
 		return;
 	}
 	else if (coord.x + 1 == WIDTH) {
-		imageStore(output_grid, coord, encode(get_mat(coord)));
-		imageStore(output_grid, coord + ivec2(0, 1), encode(get_mat(coord + ivec2(0, 1))));
+		imageStore(output_grid, coord, imageLoad(input_grid, coord));
+		imageStore(output_grid, coord + ivec2(0, 1), imageLoad(input_grid, coord + ivec2(0, 1)));
 		return;
 	}
 	else if (coord.y + 1 == HEIGHT) {
-		imageStore(output_grid, coord, encode(get_mat(coord)));
-		imageStore(output_grid, coord + ivec2(1, 0), encode(get_mat(coord + ivec2(1, 0))));
+		imageStore(output_grid, coord, imageLoad(input_grid, coord));
+		imageStore(output_grid, coord + ivec2(1, 0), imageLoad(input_grid, coord + ivec2(1, 0)));
 		return;
 	}
-	Particle TL = decode(imageLoad(input_grid, coord));
-	Particle TR = decode(imageLoad(input_grid, coord + ivec2(1, 0)));
-	Particle BL = decode(imageLoad(input_grid, coord + ivec2(0, 1)));
-	Particle BR = decode(imageLoad(input_grid, coord + ivec2(1, 1)));
-	ivec4 key = ivec4(TL.mat, TR.mat, BL.mat, BR.mat);
-	ivec4 res = lookup(key);
-	imageStore(output_grid, coord, encode(res.x));
-	imageStore(output_grid, coord + ivec2(1, 0), encode(res.y));
-	imageStore(output_grid, coord + ivec2(0, 1), encode(res.z));
-	imageStore(output_grid, coord + ivec2(1, 1), encode(res.w));
+
+	// Movement logic
+	vec4 TL_color = imageLoad(input_grid, coord			  	 );
+	vec4 TR_color = imageLoad(input_grid, coord + ivec2(1, 0));
+	vec4 BL_color = imageLoad(input_grid, coord + ivec2(0, 1));
+	vec4 BR_color = imageLoad(input_grid, coord + ivec2(1, 1));
+	Particle TL = decode(TL_color);
+	Particle TR = decode(TR_color);
+	Particle BL = decode(BL_color);
+	Particle BR = decode(BR_color);
+	ivec4 key = ivec4(0, 0, 0, 0);
+	bool cont = true;
+	while (cont) {
+		// Update key
+		if (key.x == 1) key.x = 2;
+		if (key.y == 1) key.y = 2;
+		if (key.z == 1) key.z = 2;
+		if (key.w == 1) key.w = 2;
+
+		int m = -1;
+		if (key.x == 0 && TL.density > m) m = TL.density;
+		if (key.y == 0 && TR.density > m) m = TR.density; 
+		if (key.z == 0 && BL.density > m) m = BL.density; 
+		if (key.w == 0 && BR.density > m) m = BR.density;
+		if (m == -1) break;
+
+		if (TL.density == m) key.x = 1;
+		if (TR.density == m) key.y = 1;
+		if (BL.density == m) key.z = 1;
+		if (BR.density == m) key.w = 1;
+		if (m == 255) continue; // Skip static particles
+		// Lookup movement pattern
+		int op = lookup(key);
+		// Apply movement pattern
+		switch (op) {
+			case ERROR:
+				// assert(false), except that does not exist in this language
+				break;
+			case NONE: break;
+			case TLTR:
+				if (!true) break;	// TODO: true should be simulating liquid movement probability
+				// Swap TL and TR
+				swap(TL_color, TR_color);
+				swap(TL, TR);
+				swap(key.x, key.y);
+				break;
+			case TLBL:
+				// Swap TL and BL
+				swap(TL_color, BL_color);
+				swap(TL, BL);
+				swap(key.x, key.z);
+				break;
+			case TLBR:
+				if (!coin(coord, params.frame_count, TL.topple_prob)) break;
+				// Swap TL and BR
+				swap(TL_color, BR_color);
+				swap(TL, BR);
+				swap(key.x, key.w);
+				// Stop checking
+				cont = false;
+				break;
+			case TRBL:
+				if (!coin(coord + ivec2(1, 0), params.frame_count, TR.topple_prob)) break;
+				// Swap TR and BL
+				swap(TR_color, BL_color);
+				swap(TR, BL);
+				swap(key.y, key.z);
+				// Stop checking
+				cont = false;
+				break;
+			case TRBR:
+				// Swap TR and BR
+				swap(TR_color, BR_color);
+				swap(TR, BR);
+				swap(key.y, key.w);
+				break;
+			case BLBR:
+				if (!true) break;	// TODO: true should be simulating liquid movement probability
+				// Swap BL and BR
+				swap(BL_color, BR_color);
+				swap(BL, BR);
+				swap(key.z, key.w);
+				break;
+			case TTBB:
+				// Swap TL and BL
+				swap(TL_color, BL_color);
+				swap(TL, BL);
+				swap(key.x, key.z);
+				// Swap TR and BR
+				swap(TR_color, BR_color);
+				swap(TR, BR);
+				swap(key.y, key.w);
+				// Stop checking
+				break;
+		}
+		cont = false;
+	}
+	// Write changes to grid
+	imageStore(output_grid, coord			   , TL_color);
+	imageStore(output_grid, coord + ivec2(1, 0), TR_color);
+	imageStore(output_grid, coord + ivec2(0, 1), BL_color);
+	imageStore(output_grid, coord + ivec2(1, 1), BR_color);
 }
 
+
+
 void main() {
-	int method = 0;
+	int method = 1;
 	ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
 	if (coord.x >= WIDTH || coord.y >= HEIGHT) return;
 	if (params.is_frozen == 0) {
