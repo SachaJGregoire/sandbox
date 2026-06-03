@@ -27,42 +27,64 @@ script = ExtResource("1_ig7tw")
 
 [node name="CanvasLayer" type="CanvasLayer" parent="TextureRect" unique_id=665484866]
 
-[node name="HBoxContainer" type="HBoxContainer" parent="TextureRect/CanvasLayer" unique_id=1491535583]
+[node name="RightHBoxContainer" type="HBoxContainer" parent="TextureRect/CanvasLayer" unique_id=1491535583]
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -432.0
+offset_left = -352.0
 offset_top = 24.0
-offset_right = -20.0
+offset_right = 60.0
 offset_bottom = 74.0
 grow_horizontal = 0
 
-[node name="SandButton" type="Button" parent="TextureRect/CanvasLayer/HBoxContainer" unique_id=2088457241]
-custom_minimum_size = Vector2(100, 30)
+[node name="SandButton" type="Button" parent="TextureRect/CanvasLayer/RightHBoxContainer" unique_id=2088457241]
+custom_minimum_size = Vector2(80, 30)
 layout_mode = 2
 size_flags_stretch_ratio = 0.0
 theme_override_font_sizes/font_size = 17
 text = "Sand"
 
-[node name="StoneButton" type="Button" parent="TextureRect/CanvasLayer/HBoxContainer" unique_id=1282805812]
-custom_minimum_size = Vector2(100, 30)
+[node name="RockButton" type="Button" parent="TextureRect/CanvasLayer/RightHBoxContainer" unique_id=1282805812]
+custom_minimum_size = Vector2(80, 30)
 layout_mode = 2
 theme_override_font_sizes/font_size = 17
-text = "Stone"
+text = "Rock"
 
-[node name="WaterButton" type="Button" parent="TextureRect/CanvasLayer/HBoxContainer" unique_id=1224822898]
-custom_minimum_size = Vector2(100, 30)
+[node name="WaterButton" type="Button" parent="TextureRect/CanvasLayer/RightHBoxContainer" unique_id=1224822898]
+custom_minimum_size = Vector2(80, 30)
 layout_mode = 2
 theme_override_font_sizes/font_size = 17
 text = "Water"
 
-[node name="AirButton" type="Button" parent="TextureRect/CanvasLayer/HBoxContainer" unique_id=1844384132]
-custom_minimum_size = Vector2(100, 30)
+[node name="AirButton" type="Button" parent="TextureRect/CanvasLayer/RightHBoxContainer" unique_id=1844384132]
+custom_minimum_size = Vector2(80, 30)
 layout_mode = 2
 theme_override_font_sizes/font_size = 17
-text = "Eraser"
+text = "Air"
 
-[connection signal="pressed" from="TextureRect/CanvasLayer/HBoxContainer/SandButton" to="TextureRect" method="select_sand"]
-[connection signal="pressed" from="TextureRect/CanvasLayer/HBoxContainer/StoneButton" to="TextureRect" method="select_stone"]
-[connection signal="pressed" from="TextureRect/CanvasLayer/HBoxContainer/WaterButton" to="TextureRect" method="select_water"]
-[connection signal="pressed" from="TextureRect/CanvasLayer/HBoxContainer/AirButton" to="TextureRect" method="select_air"]
+[node name="LeftVBoxContainer" type="VBoxContainer" parent="TextureRect/CanvasLayer" unique_id=1659679079]
+offset_left = 24.0
+offset_top = 24.0
+offset_right = 54.0
+offset_bottom = 94.0
+
+[node name="+" type="Button" parent="TextureRect/CanvasLayer/LeftVBoxContainer" unique_id=3208244]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+size_flags_stretch_ratio = 0.0
+theme_override_font_sizes/font_size = 17
+text = "+"
+
+[node name="-" type="Button" parent="TextureRect/CanvasLayer/LeftVBoxContainer" unique_id=2033274631]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+size_flags_stretch_ratio = 0.0
+theme_override_font_sizes/font_size = 17
+text = "-"
+
+[connection signal="pressed" from="TextureRect/CanvasLayer/RightHBoxContainer/SandButton" to="TextureRect" method="select_sand"]
+[connection signal="pressed" from="TextureRect/CanvasLayer/RightHBoxContainer/RockButton" to="TextureRect" method="select_stone"]
+[connection signal="pressed" from="TextureRect/CanvasLayer/RightHBoxContainer/WaterButton" to="TextureRect" method="select_water"]
+[connection signal="pressed" from="TextureRect/CanvasLayer/RightHBoxContainer/AirButton" to="TextureRect" method="select_air"]
+[connection signal="pressed" from="TextureRect/CanvasLayer/LeftVBoxContainer/+" to="TextureRect" method="increase_brush_size"]
+[connection signal="pressed" from="TextureRect/CanvasLayer/LeftVBoxContainer/-" to="TextureRect" method="decrease_brush_size"]

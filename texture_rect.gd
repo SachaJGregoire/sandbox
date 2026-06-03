@@ -21,7 +21,7 @@ var total_frames: int = 0
 # Interactivity variables
 var selected_material: int = 1
 var is_drawing: bool = false
-var brush_size: float = 12.0
+var brush_size: float = 10
 
 func _ready():
 	rd = RenderingServer.get_rendering_device()
@@ -52,8 +52,7 @@ func _ready():
 	tex_rd.texture_rd_rid = textures[0]
 	texture = tex_rd
 	
-	print("Ready! Controls:")
-	print("Left Click = Sand | Right Click = Wall | Esc = Erase | Space = Pause")
+	print("Ready!")
 
 func create_texture() -> RID:
 	var format = RDTextureFormat.new()
@@ -174,11 +173,26 @@ func _gui_input(event):
 
 func _unhandled_input(event):
 	if event is InputEventKey and event.pressed:
+		
 		if event.keycode == KEY_SPACE:
 			is_frozen = !is_frozen
 			print("Simulation: ", "FROZEN" if is_frozen else "RUNNING")
 		elif event.keycode == KEY_ESCAPE:
 			do_reset = true
+		
+		elif event.keycode == KEY_UP:
+			increase_brush_size()
+		elif event.keycode == KEY_DOWN:
+			decrease_brush_size()
+
+		elif event.keycode == KEY_S:
+			select_sand()
+		elif event.keycode == KEY_R:
+			select_stone()
+		elif event.keycode == KEY_W:
+			select_water()
+		elif event.keycode == KEY_A:
+			select_air()
 
 
 func _process(_delta: float) -> void:
@@ -228,15 +242,22 @@ func _process(_delta: float) -> void:
 		print("Sand: ", counts[0], " Water: ", counts[1], " Stone: ", counts[2])
 	
 
-func select_sand():
+func select_sand() -> void:
 	selected_material = 1
 	print("Material: SAND")
-func select_stone():
+func select_stone() -> void:
 	selected_material = 2
-	print("Material: STONE")
-func select_air():
+	print("Material: ROCK")
+func select_air() -> void:
 	selected_material = 3
 	print("Material: AIR")
-func select_water():
+func select_water() -> void:
 	selected_material = 4
 	print("Material: WATER")
+
+func increase_brush_size() -> void:
+	brush_size = clamp(brush_size + 2, 3, 30)
+	print("Brush size: ", brush_size)
+func decrease_brush_size() -> void:
+	brush_size = clamp(brush_size - 2, 3, 30)
+	print("Brush size: ", brush_size)

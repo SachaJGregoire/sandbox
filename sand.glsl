@@ -31,6 +31,11 @@ bool coin(vec2 coord, int frame) {
 	return r < 0.5;
 }
 
+bool shimmer(vec2 coord, int frame) {
+	float r = hash2t(coord, frame + 7717);
+	return r < 0.005;
+}
+
 const int WIDTH  = 512;
 const int HEIGHT = 512;
 
@@ -182,6 +187,12 @@ void update(ivec2 coord) {
             if (move > 0) {
             	next_color = material_colors[Air];
             }
+			else {
+				if (shimmer(coord, params.frame_count)) {                    
+                    float variance = (hash2t(coord, params.frame_count) - 0.5);
+                    next_color = material_colors[Water] + vec4(0.0, 0.15*variance, 0.15*variance, 0.0);
+                }
+			}
         }
     } 
     
