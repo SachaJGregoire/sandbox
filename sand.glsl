@@ -273,178 +273,180 @@ const int TRBL	= 4;
 const int TRBR	= 5;
 const int BLBR	= 6;
 const int TTBB	= 7;
+const int TRTL	= 8;
+const int BRBL	= 9;
 
 const int marg[81] = int[81](
-	ERROR,	/*	0  (-1,-1,
+	ERROR,	/*  0  (-1,-1,
 					-1,-1) */
-	TLBL,	/*	1  ( 0,-1,
+	TLBL,	/*  1  ( 0,-1,
 					-1,-1) */
-	ERROR,	/*	2  ( 1,-1,
+	ERROR,	/*  2  ( 1,-1,
 					-1,-1) */
-	TRBR,	/*	3  (-1, 0,
+	TRBR,	/*  3  (-1, 0,
 					-1,-1) */
-	TTBB,	/*	4  ( 0, 0,
+	TTBB,	/*  4  ( 0, 0,
 					-1,-1) */
-	TRBR, 	/*	5  ( 1, 0,
+	TRBR,	/*  5  ( 1, 0,
 					-1,-1) */
-	ERROR,	/*	6  (-1, 1,
+	ERROR,	/*  6  (-1, 1,
 					-1,-1) */
-	TLBL,	/*	7  ( 0, 1,
+	TLBL,	/*  7  ( 0, 1,
 					-1,-1) */
-	ERROR,	/*	8  ( 1, 1,
+	ERROR,	/*  8  ( 1, 1,
 					-1,-1) */
 
-	BLBR,	/*	9  (-1,-1,
+	BLBR,	/*  9  (-1,-1,
 					 0,-1) */
-	TLBR,	/* 10 ( 0,-1,
-					0,-1) */
-	BLBR,	/* 11 ( 1,-1,
-					0,-1) */
-	TRBR,	/* 12 (-1, 0,
-					0,-1) */
-	TRBR,	/* 13 ( 0, 0,
-					0,-1) */
-	TRBR,	/* 14 ( 1, 0,
-					0,-1) */
-	BLBR,	/* 15 (-1, 1,
-					0,-1) */
-	BLBR,	/* 16 ( 0, 1,
-					0,-1) */
-	BLBR,	/* 17 ( 1, 1,
-					0,-1) */
+	TLBR,	/* 10  ( 0,-1,
+					 0,-1) */
+	BLBR,	/* 11  ( 1,-1,
+					 0,-1) */
+	TRBR,	/* 12  (-1, 0,
+					 0,-1) */
+	TRBR,	/* 13  ( 0, 0,
+					 0,-1) */
+	TRBR,	/* 14  ( 1, 0,
+					 0,-1) */
+	BLBR,	/* 15  (-1, 1,
+					 0,-1) */
+	BLBR,	/* 16  ( 0, 1,
+					 0,-1) */
+	BLBR,	/* 17  ( 1, 1,
+					 0,-1) */
 
-	ERROR,	/* 18 (-1,-1,
-					1,-1) */
-	TLBR,	/* 19 ( 0,-1,
-					1,-1) */
-	ERROR,	/* 20 ( 1,-1,
-					1,-1) */
-	TRBR,	/* 21 (-1, 0,
-					1,-1) */
-	TRBR,	/* 22 ( 0, 0,
-					1,-1) */
-	TRBR,	/* 23 ( 1, 0,
-					1,-1) */
-	ERROR,	/* 24 (-1, 1,
-					1,-1) */
-	NONE,	/* 25 ( 0, 1,
-					1,-1) */
-	ERROR,	/* 26 ( 1, 1,
-					1,-1) */
+	ERROR,	/* 18  (-1,-1,
+					 1,-1) */
+	TLBR,	/* 19  ( 0,-1,
+					 1,-1) */
+	ERROR,	/* 20  ( 1,-1,
+					 1,-1) */
+	TRBR,	/* 21  (-1, 0,
+					 1,-1) */
+	TRBR,	/* 22  ( 0, 0,
+					 1,-1) */
+	TRBR,	/* 23  ( 1, 0,
+					 1,-1) */
+	ERROR,	/* 24  (-1, 1,
+					 1,-1) */
+	NONE,	/* 25  ( 0, 1,
+					 1,-1) */
+	ERROR,	/* 26  ( 1, 1,
+					 1,-1) */
 
-	NONE,	/* 27 (-1,-1,
-					1, 0) */
-	TLTR,	/* 28 ( 0,-1,
-					1, 0) */
-	NONE,	/* 29 ( 1,-1,
-					1, 0) */
-	TLTR,	/* 30 (-1, 0,
-					1, 0) */
-	NONE,	/* 31 ( 0, 0,
-					1, 0) */
-	NONE,	/* 32 ( 1, 0,
-					1, 0) */
-	NONE,	/* 33 (-1, 1,
-					1, 0) */
-	NONE,	/* 34 ( 0, 1,
-					1, 0) */
-	NONE,	/* 35 ( 1, 1,
-					1, 0) */
+	BRBL,	/* 27  (-1,-1,
+					-1, 0) */
+	TLBL,	/* 28  ( 0,-1,
+					-1, 0) */
+	BRBL,	/* 29  ( 1,-1,
+					-1, 0) */
+	TRBL,	/* 30  (-1, 0,
+					-1, 0) */
+	TLBL,	/* 31  ( 0, 0,
+					-1, 0) */
+	BRBL,	/* 32  ( 1, 0,
+					-1, 0) */
+	BRBL,	/* 33  (-1, 1,
+					-1, 0) */
+	TLBL,	/* 34  ( 0, 1,
+					-1, 0) */
+	BRBL,	/* 35  ( 1, 1,
+					-1, 0) */
 
-	NONE,	/* 36 (-1,-1,
-					0, 0) */
-	TLTR,	/* 37 ( 0,-1,
-					0, 0) */
-	NONE,	/* 38 ( 1,-1,
-					0, 0) */
-	TLTR,	/* 39 (-1, 0,
-					0, 0) */
-	NONE,	/* 40 ( 0, 0,
-					0, 0) */
-	NONE,	/* 41 ( 1, 0,
-					0, 0) */
-	NONE,	/* 42 (-1, 1,
-					0, 0) */
-	NONE,	/* 43 ( 0, 1,
-					0, 0) */
-	NONE,	/* 44 ( 1, 1,
-					0, 0) */
+	NONE,	/* 36  (-1,-1,
+					 0, 0) */
+	TLTR,	/* 37  ( 0,-1,
+					 0, 0) */
+	NONE,	/* 38  ( 1,-1,
+					 0, 0) */
+	TRTL,	/* 39  (-1, 0,
+					 0, 0) */
+	NONE,	/* 40  ( 0, 0,
+					 0, 0) */
+	NONE,	/* 41  ( 1, 0,
+					 0, 0) */
+	NONE,	/* 42  (-1, 1,
+					 0, 0) */
+	NONE,	/* 43  ( 0, 1,
+					 0, 0) */
+	NONE,	/* 44  ( 1, 1,
+					 0, 0) */
 
-	NONE,	/* 45 (-1,-1,
-					1, 0) */
-	TLTR,	/* 46 ( 0,-1,
-					1, 0) */
-	NONE,	/* 47 ( 1,-1,
-					1, 0) */
-	TLTR,	/* 48 (-1, 0,
-					1, 0) */
-	NONE,	/* 49 ( 0, 0,
-					1, 0) */
-	NONE,	/* 50 ( 1, 0,
-					1, 0) */
-	NONE,	/* 51 (-1, 1,
-					1, 0) */
-	NONE,	/* 52 ( 0, 1,
-					1, 0) */
-	NONE,	/* 53 ( 1, 1,
-					1, 0) */
+	NONE,	/* 45  (-1,-1,
+					 1, 0) */
+	TLTR,	/* 46  ( 0,-1,
+					 1, 0) */
+	NONE,	/* 47  ( 1,-1,
+					 1, 0) */
+	TRTL,	/* 48  (-1, 0,
+					 1, 0) */
+	NONE,	/* 49  ( 0, 0,
+					 1, 0) */
+	NONE,	/* 50  ( 1, 0,
+					 1, 0) */
+	NONE,	/* 51  (-1, 1,
+					 1, 0) */
+	NONE,	/* 52  ( 0, 1,
+					 1, 0) */
+	NONE,	/* 53  ( 1, 1,
+					 1, 0) */
 
-	ERROR,	/* 54 (-1,-1,
-					1, 1) */
-	TLTR,	/* 55 ( 0,-1,
-					1, 1) */
-	ERROR,	/* 56 ( 1,-1,
-					1, 1) */
-	TLTR,	/* 57 (-1, 0,
-					1, 1) */
-	NONE,	/* 58 ( 0, 0,
-					1, 1) */
-	NONE,	/* 59 ( 1, 0,
-					1, 1) */
-	ERROR,	/* 60 (-1, 1,
-					1, 1) */
-	NONE,	/* 61 ( 0, 1,
-					1, 1) */
-	ERROR,	/* 62 ( 1, 1,
-					1, 1) */
+	ERROR,	/* 54  (-1,-1,
+					-1, 1) */
+	TLBL,	/* 55  ( 0,-1,
+					-1, 1) */
+	ERROR,	/* 56  ( 1,-1,
+					-1, 1) */
+	TRBL,	/* 57  (-1, 0,
+					-1, 1) */
+	TLBL,	/* 58  ( 0, 0,
+					-1, 1) */
+	NONE,	/* 59  ( 1, 0,
+					-1, 1) */
+	ERROR,	/* 60  (-1, 1,
+					-1, 1) */
+	TLBL,	/* 61  ( 0, 1,
+					-1, 1) */
+	ERROR,	/* 62  ( 1, 1,
+					-1, 1) */
 
-	NONE,	/* 63 (-1,-1,
-					0, 1) */
-	TLTR,	/* 64 ( 0,-1,
-					0, 1) */
-	NONE,	/* 65 ( 1,-1,
-					0, 1) */
-	TLTR,	/* 66 (-1, 0,
-					0, 1) */
-	NONE,	/* 67 ( 0, 0,
-					0, 1) */
-	NONE,	/* 68 ( 1, 0,
-					0, 1) */
-	NONE,	/* 69 (-1, 1,
-					0, 1) */
-	NONE,	/* 70 ( 0, 1,
-					0, 1) */
-	NONE,	/* 71 ( 1, 1,
-					0, 1) */
+	NONE,	/* 63  (-1,-1,
+					 0, 1) */
+	TLTR,	/* 64  ( 0,-1,
+					 0, 1) */
+	NONE,	/* 65  ( 1,-1,
+					 0, 1) */
+	TRTL,	/* 66  (-1, 0,
+					 0, 1) */
+	NONE,	/* 67  ( 0, 0,
+					 0, 1) */
+	NONE,	/* 68  ( 1, 0,
+					 0, 1) */
+	NONE,	/* 69  (-1, 1,
+					 0, 1) */
+	NONE,	/* 70  ( 0, 1,
+					 0, 1) */
+	NONE,	/* 71  ( 1, 1,
+					 0, 1) */
 
-	ERROR,	/* 72 (-1,-1,
-					1, 1) */
-	TLTR,	/* 73 ( 0,-1,
-					1, 1) */
-	ERROR,	/* 74 ( 1,-1,
-					1, 1) */
-	TLTR,	/* 75 (-1, 0,
-					1, 1) */
-	NONE,	/* 76 ( 0, 0,
-					1, 1) */
-	NONE,	/* 77 ( 1, 0,
-					1, 1) */
-	ERROR,	/* 78 (-1, 1,
-					1, 1) */
-	NONE,	/* 79 ( 0, 1,
-					1, 1) */
-	ERROR	/* 80 ( 1, 1,
-					1, 1) */
+	ERROR,	/* 72  (-1,-1,
+					 1, 1) */
+	TLTR,	/* 73  ( 0,-1,
+					 1, 1) */
+	ERROR,	/* 74  ( 1,-1,
+					 1, 1) */
+	TRTL,	/* 75  (-1, 0,
+					 1, 1) */
+	NONE,	/* 76  ( 0, 0,
+					 1, 1) */
+	NONE,	/* 77  ( 1, 0,
+					 1, 1) */
+	ERROR,	/* 78  (-1, 1,
+					 1, 1) */
+	NONE,	/* 79  ( 0, 1,
+					 1, 1) */
+	ERROR	/* 80  ( 1, 1,
+					 1, 1) */
 );
 
 int lookup(ivec4 key) {
@@ -468,24 +470,40 @@ void swap(inout int a, inout int b) {
 }
 
 void update_marg(ivec2 coord) {
-	// TODO: Borders
-	// Setting up offset
+	// TODO: border movement instead of just copy pasting
+	// TODO: Make move_prob based on dispersion rate?
+	float liquid_move_prob = 0.5;
+	// Setting up offset (I think the 4offset looks better than the 2offset, but both work)
 	int offset = params.frame_count % 4;
 	int offset_x = (offset == 1 || offset == 2) ? 1 : 0;
 	int offset_y = (offset == 1 || offset == 3) ? 1 : 0;
+	//int offset_x = params.frame_count % 2;
+	//int offset_y = params.frame_count % 2;
+
+	// Hande top and left margins
+	if (coord.x == 0 && offset_x == 1) {
+		imageStore(output_grid, coord, imageLoad(input_grid, coord));
+		return;
+	}
+	if (coord.y == 0 && offset_y == 1) {
+		imageStore(output_grid, coord, imageLoad(input_grid, coord));
+		return;
+	}
+
+	// Return for cells that are not the representative (TL) of their margolus neighborhood
 	if (coord.x % 2 != offset_x || coord.y % 2 != offset_y) return;
 
-	// Draws bottom and right boxes that would be out of bounds (NOT TOP OR LEFT BOXES)
+	// Handle right and bottom margins
 	if (coord.x + 1 == WIDTH && coord.y + 1 == HEIGHT) {
 		imageStore(output_grid, coord, imageLoad(input_grid, coord));
 		return;
 	}
-	else if (coord.x + 1 == WIDTH) {
+	if (coord.x + 1 == WIDTH) {
 		imageStore(output_grid, coord, imageLoad(input_grid, coord));
 		imageStore(output_grid, coord + ivec2(0, 1), imageLoad(input_grid, coord + ivec2(0, 1)));
 		return;
 	}
-	else if (coord.y + 1 == HEIGHT) {
+	if (coord.y + 1 == HEIGHT) {
 		imageStore(output_grid, coord, imageLoad(input_grid, coord));
 		imageStore(output_grid, coord + ivec2(1, 0), imageLoad(input_grid, coord + ivec2(1, 0)));
 		return;
@@ -530,7 +548,7 @@ void update_marg(ivec2 coord) {
 				break;
 			case NONE: break;
 			case TLTR:
-				if (!true) break;	// TODO: true should be simulating liquid movement probability
+				if (TL.state == Solid || !coin(coord, params.frame_count, liquid_move_prob)) break;
 				// Swap TL and TR
 				swap(TL_color, TR_color);
 				swap(TL, TR);
@@ -567,7 +585,7 @@ void update_marg(ivec2 coord) {
 				swap(key.y, key.w);
 				break;
 			case BLBR:
-				if (!true) break;	// TODO: true should be simulating liquid movement probability
+				if (BL.state == Solid || !coin(coord + ivec2(0, 1), params.frame_count, liquid_move_prob)) break;
 				// Swap BL and BR
 				swap(BL_color, BR_color);
 				swap(BL, BR);
@@ -584,8 +602,21 @@ void update_marg(ivec2 coord) {
 				swap(key.y, key.w);
 				// Stop checking
 				break;
+			case TRTL:
+				if (TR.state == Solid || !coin(coord + ivec2(1, 0), params.frame_count, liquid_move_prob)) break;
+				// Swap TL and TR
+				swap(TL_color, TR_color);
+				swap(TL, TR);
+				swap(key.x, key.y);
+				break;
+			case BRBL:
+				if (BR.state == Solid || !coin(coord + ivec2(1, 1), params.frame_count, liquid_move_prob)) break;
+				// Swap BL and BR
+				swap(BL_color, BR_color);
+				swap(BL, BR);
+				swap(key.z, key.w);
+				break;
 		}
-		cont = false;
 	}
 	// Write changes to grid
 	imageStore(output_grid, coord			   , TL_color);
