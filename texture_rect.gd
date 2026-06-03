@@ -185,7 +185,7 @@ func _process(_delta: float) -> void:
 	if not rd or not pipeline.is_valid():
 		return
 		
-	for i in range(6):
+	for i in range(4):
 		total_frames += 1
 		
 		var input_idx = current_texture_index
