@@ -7,8 +7,8 @@ layout(set = 0, binding = 1, rgba32f) uniform writeonly image2D output_grid;
 
 layout(set = 0, binding = 2) buffer ParticleCounter {
 	uint sand_count;
-	uint water_count;
 	uint stone_count;
+	uint water_count;
 } counters;
 
 // We use Push Constants to quickly send mouse input from GDScript
@@ -111,153 +111,153 @@ int get_mat(ivec2 p) {
 }
 
 int get_water_move(ivec2 source, int dx, int dy, int dispertion, int frame) {
-    if (!coin(source, frame)) return 0;
-    
-    int move = 0;
-    for (int i = 1; i <= dispertion; i++) {
-        ivec2 target = source + ivec2(dx * i, dy * i);
-        
-        if (get_mat(target) != Air) break;
-        
-        if (dy == 1) {
-            if (get_mat(source + ivec2(dx * i, dy * i - 1)) != Air) break; 
-        }
+	if (!coin(source, frame)) return 0;
+	
+	int move = 0;
+	for (int i = 1; i <= dispertion; i++) {
+		ivec2 target = source + ivec2(dx * i, dy * i);
+		
+		if (get_mat(target) != Air) break;
+		
+		if (dy == 1) {
+			if (get_mat(source + ivec2(dx * i, dy * i - 1)) != Air) break; 
+		}
 
-        int target_up = get_mat(target + ivec2(0, -1));
-        if (target_up == Sand || target_up == Water) break;
-        
-        move = i;
-    }
-    return move;
+		int target_up = get_mat(target + ivec2(0, -1));
+		if (target_up == Sand || target_up == Water) break;
+		
+		move = i;
+	}
+	return move;
 }
 
 void update(ivec2 coord) {
-    vec4 current_color  = imageLoad(input_grid, coord);
+	vec4 current_color  = imageLoad(input_grid, coord);
 	if (current_color.a < 0.1) {
-        current_color = material_colors[Air];
-    }
+		current_color = material_colors[Air];
+	}
 	
 	Particle cell = decode(current_color);
 
 	vec4 next_color = current_color;
 
 	int phase = params.frame_count % 4;
-    int move_x = (phase == 0 || phase == 1) ? -1 : 1; 
-    int move_y = (phase == 0 || phase == 2) ? 0 : 1;
+	int move_x = (phase == 0 || phase == 1) ? -1 : 1; 
+	int move_y = (phase == 0 || phase == 2) ? 0 : 1;
 
-    // SAND LOGIC
-    if (cell.mat == Sand) {
-        int mat_below = get_mat(coord + ivec2(0, 1));
-        
+	// SAND LOGIC
+	if (cell.mat == Sand) {
+		int mat_below = get_mat(coord + ivec2(0, 1));
+		
 		// vertical fall
-        if (mat_below == Air) {
-            next_color = material_colors[Air];
-        }
+		if (mat_below == Air) {
+			next_color = material_colors[Air];
+		}
 		// sink below water
-        else if (mat_below == Water) {
+		else if (mat_below == Water) {
 			next_color = imageLoad(input_grid, coord + ivec2(0, 1));
-        }
+		}
 		// diagonal fall
-        else if (move_y == 1) { 
-            int mat_target = get_mat(coord + ivec2(move_x, 1));
-            int mat_side = get_mat(coord + ivec2(move_x, 0));
-            
-            if (mat_target == Air && mat_side == Air && coin(coord, params.frame_count)) {
-            	next_color = material_colors[Air];
-            }
-        }
-    } 
-    
-    // WATER LOGIC
-    else if (cell.mat == Water) {
-        int mat_above = get_mat(coord + ivec2(0, -1));
-        int mat_below = get_mat(coord + ivec2(0, 1));
+		else if (move_y == 1) { 
+			int mat_target = get_mat(coord + ivec2(move_x, 1));
+			int mat_side = get_mat(coord + ivec2(move_x, 0));
+			
+			if (mat_target == Air && mat_side == Air && coin(coord, params.frame_count)) {
+				next_color = material_colors[Air];
+			}
+		}
+	} 
+	
+	// WATER LOGIC
+	else if (cell.mat == Water) {
+		int mat_above = get_mat(coord + ivec2(0, -1));
+		int mat_below = get_mat(coord + ivec2(0, 1));
 
 		// rise above sand
-        if (mat_above == Sand) {
+		if (mat_above == Sand) {
 			next_color = imageLoad(input_grid, coord + ivec2(0, -1));
-        }
+		}
 		// vertical fall
-        else if (mat_below == Air) {
+		else if (mat_below == Air) {
 			next_color = material_colors[Air];
-        }
+		}
 		// horizontal or diagonal fall
-        else {
-            int move = get_water_move(coord, move_x, move_y, properties[Water].dispertion_rate, params.frame_count);
-            if (move > 0) {
-            	next_color = material_colors[Air];
-            }
+		else {
+			int move = get_water_move(coord, move_x, move_y, properties[Water].dispertion_rate, params.frame_count);
+			if (move > 0) {
+				next_color = material_colors[Air];
+			}
 			else {
 				if (shimmer(coord, params.frame_count)) {                    
-                    float variance = (hash2t(coord, params.frame_count) - 0.5);
-                    next_color = material_colors[Water] + vec4(0.0, 0.15*variance, 0.15*variance, 0.0);
-                }
+					float variance = (hash2t(coord, params.frame_count) - 0.5);
+					next_color = material_colors[Water] + vec4(0.0, 0.15*variance, 0.15*variance, 0.0);
+				}
 			}
-        }
-    } 
-    
-    // AIR LOGIC
-    else if (cell.mat == Air) {
-        bool receiving = false;
+		}
+	} 
+	
+	// AIR LOGIC
+	else if (cell.mat == Air) {
+		bool receiving = false;
 		vec4 incoming_color = material_colors[Air];
 
-        int mat_up = get_mat(coord + ivec2(0, -1));
-        // vertical sand fall
-        if (mat_up == Sand) {
-            receiving = true;
+		int mat_up = get_mat(coord + ivec2(0, -1));
+		// vertical sand fall
+		if (mat_up == Sand) {
+			receiving = true;
 			incoming_color = imageLoad(input_grid, coord + ivec2(0, -1));
-        }
+		}
 		// vertical water fall
-        else if (mat_up == Water) {
-            if (get_mat(coord + ivec2(0, -2)) != Sand) {
-                receiving = true;
+		else if (mat_up == Water) {
+			if (get_mat(coord + ivec2(0, -2)) != Sand) {
+				receiving = true;
 				incoming_color = imageLoad(input_grid, coord + ivec2(0, -1));
-            }
-        }
+			}
+		}
 
-        if (!receiving) {
+		if (!receiving) {
 			// diagonal sand fall
-            ivec2 sand_source = coord - ivec2(move_x, move_y);
-            if (move_y == 1 && get_mat(sand_source) == Sand) {
-                int mat_below_source = get_mat(sand_source + ivec2(0, 1));
-                if (mat_below_source != Air && mat_below_source != Water) {
-                    int mat_side = get_mat(sand_source + ivec2(move_x, 0));
-                    if (mat_side == Air && coin(sand_source, params.frame_count)) {
-                        receiving = true;
+			ivec2 sand_source = coord - ivec2(move_x, move_y);
+			if (move_y == 1 && get_mat(sand_source) == Sand) {
+				int mat_below_source = get_mat(sand_source + ivec2(0, 1));
+				if (mat_below_source != Air && mat_below_source != Water) {
+					int mat_side = get_mat(sand_source + ivec2(move_x, 0));
+					if (mat_side == Air && coin(sand_source, params.frame_count)) {
+						receiving = true;
 						incoming_color = imageLoad(input_grid, sand_source);
-                    }
-                }
-            }
-            
+					}
+				}
+			}
+			
 			// horizontal or diagonal water fall
-            if (!receiving) {
-                for (int i = 1; i <= properties[Water].dispertion_rate; i++) {
-                    ivec2 source = coord - ivec2(move_x * i, move_y * i);
-                    int source_mat = get_mat(source);
-                    
-                    if (source_mat == Water) {
-                        int mat_below_source = get_mat(source + ivec2(0, 1));
-                        int mat_above_source = get_mat(source + ivec2(0, -1));
-                        
-                        if (mat_below_source != Air && mat_above_source != Sand) {
-                            if (get_water_move(source, move_x, move_y, properties[Water].dispertion_rate, params.frame_count) == i) {
-                                receiving = true;
+			if (!receiving) {
+				for (int i = 1; i <= properties[Water].dispertion_rate; i++) {
+					ivec2 source = coord - ivec2(move_x * i, move_y * i);
+					int source_mat = get_mat(source);
+					
+					if (source_mat == Water) {
+						int mat_below_source = get_mat(source + ivec2(0, 1));
+						int mat_above_source = get_mat(source + ivec2(0, -1));
+						
+						if (mat_below_source != Air && mat_above_source != Sand) {
+							if (get_water_move(source, move_x, move_y, properties[Water].dispertion_rate, params.frame_count) == i) {
+								receiving = true;
 								incoming_color = imageLoad(input_grid, source);
-                            }
-                        }
-                        break;
-                    } 
-                    else if (source_mat != Air) {
-                        break;
-                    }
-                }
-            }
-        }
+							}
+						}
+						break;
+					} 
+					else if (source_mat != Air) {
+						break;
+					}
+				}
+			}
+		}
 
-        if (receiving) {
+		if (receiving) {
 			next_color = incoming_color;
-        }
-    }
+		}
+	}
 	imageStore(output_grid, coord, next_color);
 }
 
@@ -416,8 +416,8 @@ void main() {
 			float variance = (hash2t(coord, params.frame_count) - 0.5);
 			if (params.draw_mode == 1) { // Draw Sand
 				if (next_state == Air && coin(coord, params.frame_count)) {
-                    vec4 textured_sand = material_colors[Sand] + vec4(0.0, 0.15*variance, 0.15*variance, 0.0);                    
-                    imageStore(output_grid, coord, textured_sand);
+					vec4 textured_sand = material_colors[Sand] + vec4(0.0, 0.15*variance, 0.15*variance, 0.0);                    
+					imageStore(output_grid, coord, textured_sand);
 				}
 			}
 			else if (params.draw_mode == 2) { // Draw Stone
@@ -428,11 +428,11 @@ void main() {
 				imageStore(output_grid, coord, encode(Air));
 			}
 			else if (params.draw_mode == 4) { // Draw Water
-                if (next_state == Air && coin(coord, params.frame_count)) {
-                    vec4 textured_water = material_colors[Water] + vec4(0.0, 0.15*variance, 0.15*variance, 0.0);                    
-                    imageStore(output_grid, coord, textured_water);
-                }
-            }
+				if (next_state == Air && coin(coord, params.frame_count)) {
+					vec4 textured_water = material_colors[Water] + vec4(0.0, 0.15*variance, 0.15*variance, 0.0);                    
+					imageStore(output_grid, coord, textured_water);
+				}
+			}
 		}
 	}
 

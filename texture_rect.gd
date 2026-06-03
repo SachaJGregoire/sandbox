@@ -53,7 +53,7 @@ func _ready():
 	texture = tex_rd
 	
 	print("Ready!")
-
+	
 func create_texture() -> RID:
 	var format = RDTextureFormat.new()
 	format.width = WIDTH
@@ -69,8 +69,8 @@ func create_counter_buffer() -> RID:
 	var data = PackedInt32Array()
 	data.resize(3)
 	data[0] = 0  # sand
-	data[1] = 0  # water
-	data[2] = 0  # stone
+	data[1] = 0  # rock
+	data[2] = 0  # water
 	return rd.storage_buffer_create(data.size() * 4, data.to_byte_array())
 
 func create_compute_pipeline() -> bool:
@@ -133,6 +133,11 @@ func _exit_tree():
 		if uniform_sets[1].is_valid(): rd.free_rid(uniform_sets[1])
 
 
+const COLOR_AIR   = Color(0.1,  0.1,  0.1,  1.0)
+const COLOR_SAND  = Color(0.86, 0.73, 0.36, 1.0)
+const COLOR_WATER = Color(0.0,  0.4,  0.9,  1.0)
+const COLOR_STONE = Color(0.5,  0.5,  0.5,  1.0)
+const COLOR_VAPOR = Color(0.85, 0.90, 0.95, 0.45)
 
 func initialize_simple_pattern(texture_rid: RID) -> void:
 	var data = PackedFloat32Array()
@@ -142,28 +147,25 @@ func initialize_simple_pattern(texture_rid: RID) -> void:
 	for y in range(HEIGHT):
 		for x in range(WIDTH):
 			var idx = (y * WIDTH + x) * 4
-			var r = 0
-			var g = 0
-			var b = 0
+			var color = COLOR_AIR
 			
-			# Floor
 			if y > 450 and y < 470 and x > 100 and x < 412:
-				r = 0.3; g = 0.3; b = 0.35 # Wall Color
-			# Walls
+				color = COLOR_STONE
+			
 			if y > 350 and y <= 450 and (x > 100 and x < 120 or x > 392 and x < 412):
-				r = 0.3; g = 0.3; b = 0.35 # Wall Color
+				color = COLOR_STONE
 				
-			data[idx] = r
-			data[idx + 1] = g
-			data[idx + 2] = b
-			data[idx + 3] = 0
+			data[idx] = color.r
+			data[idx + 1] = color.g
+			data[idx + 2] = color.b
+			data[idx + 3] = color.a
 			
 	rd.texture_update(texture_rid, 0, data.to_byte_array())
 
 func read_counters() -> Array:
 	var raw  = rd.buffer_get_data(counter_buffer)
 	var ints = raw.to_int32_array()
-	return [ints[0], ints[1], ints[2]]  # [sand, water, stone]
+	return [ints[0], ints[1], ints[2]]  # [sand, rock, water]
 
 
 func _gui_input(event):
@@ -176,22 +178,29 @@ func _unhandled_input(event):
 		
 		if event.keycode == KEY_SPACE:
 			is_frozen = !is_frozen
-			print("Simulation: ", "FROZEN" if is_frozen else "RUNNING")
+			if is_frozen:
+				$CanvasLayer/StatusVBoxContainer/Simulation.text = "Simulation: Frozen"
+			else:
+				$CanvasLayer/StatusVBoxContainer/Simulation.text = "Simulation: Running"
 		elif event.keycode == KEY_ESCAPE:
 			do_reset = true
-		
 		elif event.keycode == KEY_UP:
 			increase_brush_size()
+			$CanvasLayer/StatusVBoxContainer/BrushSize.text = "Brush size: %d" % brush_size
 		elif event.keycode == KEY_DOWN:
 			decrease_brush_size()
-
+			$CanvasLayer/StatusVBoxContainer/BrushSize.text = "Brush size: %d" % brush_size
 		elif event.keycode == KEY_S:
+			$CanvasLayer/StatusVBoxContainer/CurrentSelected.text = "Selected: Sand"
 			select_sand()
 		elif event.keycode == KEY_R:
+			$CanvasLayer/StatusVBoxContainer/CurrentSelected.text = "Selected: Rock"
 			select_stone()
 		elif event.keycode == KEY_W:
+			$CanvasLayer/StatusVBoxContainer/CurrentSelected.text = "Selected: Water"
 			select_water()
 		elif event.keycode == KEY_A:
+			$CanvasLayer/StatusVBoxContainer/CurrentSelected.text = "Selected: Air"
 			select_air()
 
 
@@ -199,7 +208,7 @@ func _process(_delta: float) -> void:
 	if not rd or not pipeline.is_valid():
 		return
 		
-	for i in range(4):
+	for i in range(2):
 		total_frames += 1
 		
 		var input_idx = current_texture_index
@@ -239,25 +248,26 @@ func _process(_delta: float) -> void:
 	
 	if total_frames % 30 == 0:
 		var counts = read_counters()
-		print("Sand: ", counts[0], " Water: ", counts[1], " Stone: ", counts[2])
-	
+		$CanvasLayer/CounterHBoxContainer/SandCounter.text = "%d" % counts[0]
+		$CanvasLayer/CounterHBoxContainer/RockCounter.text = "%d" % counts[1]
+		$CanvasLayer/CounterHBoxContainer/WaterCounter.text = "%d" % counts[2]
 
 func select_sand() -> void:
 	selected_material = 1
-	print("Material: SAND")
+	$CanvasLayer/StatusVBoxContainer/CurrentSelected.text = "Selected: Sand"
 func select_stone() -> void:
 	selected_material = 2
-	print("Material: ROCK")
+	$CanvasLayer/StatusVBoxContainer/CurrentSelected.text = "Selected: Rock"
 func select_air() -> void:
 	selected_material = 3
-	print("Material: AIR")
+	$CanvasLayer/StatusVBoxContainer/CurrentSelected.text = "Selected: Air"
 func select_water() -> void:
 	selected_material = 4
-	print("Material: WATER")
+	$CanvasLayer/StatusVBoxContainer/CurrentSelected.text = "Selected: Water"
 
 func increase_brush_size() -> void:
 	brush_size = clamp(brush_size + 2, 3, 30)
-	print("Brush size: ", brush_size)
+	$CanvasLayer/StatusVBoxContainer/BrushSize.text = "Brush size: %d" % brush_size
 func decrease_brush_size() -> void:
 	brush_size = clamp(brush_size - 2, 3, 30)
-	print("Brush size: ", brush_size)
+	$CanvasLayer/StatusVBoxContainer/BrushSize.text = "Brush size: %d" % brush_size

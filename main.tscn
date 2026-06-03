@@ -82,6 +82,42 @@ size_flags_stretch_ratio = 0.0
 theme_override_font_sizes/font_size = 17
 text = "-"
 
+[node name="CounterHBoxContainer" type="HBoxContainer" parent="TextureRect/CanvasLayer" unique_id=1278594361]
+offset_left = 565.0
+offset_top = 60.0
+offset_right = 977.0
+offset_bottom = 110.0
+
+[node name="SandCounter" type="Label" parent="TextureRect/CanvasLayer/CounterHBoxContainer" unique_id=103942938]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+
+[node name="RockCounter" type="Label" parent="TextureRect/CanvasLayer/CounterHBoxContainer" unique_id=1767088428]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+
+[node name="WaterCounter" type="Label" parent="TextureRect/CanvasLayer/CounterHBoxContainer" unique_id=293309223]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+
+[node name="StatusVBoxContainer" type="VBoxContainer" parent="TextureRect/CanvasLayer" unique_id=1244601840]
+offset_left = 100.0
+offset_top = 24.0
+offset_right = 256.0
+offset_bottom = 101.0
+
+[node name="Simulation" type="Label" parent="TextureRect/CanvasLayer/StatusVBoxContainer" unique_id=184560283]
+layout_mode = 2
+text = "Simulation: Running"
+
+[node name="CurrentSelected" type="Label" parent="TextureRect/CanvasLayer/StatusVBoxContainer" unique_id=1933685055]
+layout_mode = 2
+text = "Selected: Sand"
+
+[node name="BrushSize" type="Label" parent="TextureRect/CanvasLayer/StatusVBoxContainer" unique_id=35564262]
+layout_mode = 2
+text = "Brush size: 10"
+
 [connection signal="pressed" from="TextureRect/CanvasLayer/RightHBoxContainer/SandButton" to="TextureRect" method="select_sand"]
 [connection signal="pressed" from="TextureRect/CanvasLayer/RightHBoxContainer/RockButton" to="TextureRect" method="select_stone"]
 [connection signal="pressed" from="TextureRect/CanvasLayer/RightHBoxContainer/WaterButton" to="TextureRect" method="select_water"]
