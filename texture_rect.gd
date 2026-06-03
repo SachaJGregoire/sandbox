@@ -237,15 +237,10 @@ func _unhandled_input(event):
 			CURRENTSELECTED.text = "Selected: Air"
 			select_air()
 
-var start : int
-
 func _process(_delta: float) -> void:
 	if not rd or not pipeline.is_valid():
 		return
 	
-	
-	if total_frames % 100 == 0:
-		start = Time.get_ticks_msec()
 	
 	for i in range(2):
 		total_frames += 1
@@ -285,14 +280,12 @@ func _process(_delta: float) -> void:
 	tex_rd.texture_rd_rid = textures[current_texture_index]
 	texture = tex_rd
 	
-	if total_frames % 30 == 0:
-		var counts = read_counters()
-		$CanvasLayer/Counters/SandCounter.text = "%d" % counts[0]
-		$CanvasLayer/Counters/RockCounter.text = "%d" % counts[1]
-		$CanvasLayer/Counters/WaterCounter.text = "%d" % counts[2]
+	#if total_frames % 30 == 0:
+		#var counts = read_counters()
+		#$CanvasLayer/Counters/SandCounter.text = "%d" % counts[0]
+		#$CanvasLayer/Counters/RockCounter.text = "%d" % counts[1]
+		#$CanvasLayer/Counters/WaterCounter.text = "%d" % counts[2]
 		
-	if total_frames % 100 == 0:
-		$CanvasLayer/Status/FPS.text = "Elapsed: %d ms" % [Time.get_ticks_msec() - start]
 func select_sand() -> void:
 	selected_material = 1
 func select_stone() -> void:
