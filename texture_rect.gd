@@ -14,7 +14,7 @@ const WIDTH: int = 512
 const HEIGHT: int = 512
 const SHADER_PATH: String = "res://sand.glsl"
 
-var is_frozen: bool = false
+var is_frozen: bool = true
 var do_reset: bool = false
 var total_frames: int = 0
 
@@ -22,6 +22,12 @@ var total_frames: int = 0
 var selected_material: int = 1
 var is_drawing: bool = false
 var brush_size: float = 10
+
+# On ready variables
+@onready var SIMULATION: Label = $CanvasLayer/Status/Simulation
+@onready var BRUSHSIZE: Label = $CanvasLayer/BrushStuff/BrushSize
+@onready var CURRENTSELECTED: Label = $CanvasLayer/Status/CurrentSelected
+@onready var PRESETLIST: OptionButton = $CanvasLayer/Presets/PresetsList
 
 func _ready():
 	rd = RenderingServer.get_rendering_device()
@@ -51,6 +57,8 @@ func _ready():
 	var tex_rd = Texture2DRD.new()
 	tex_rd.texture_rd_rid = textures[0]
 	texture = tex_rd
+	
+	refresh_dropdown()
 	
 	print("Ready!")
 	
@@ -133,28 +141,54 @@ func _exit_tree():
 		if uniform_sets[1].is_valid(): rd.free_rid(uniform_sets[1])
 
 
-const COLOR_AIR   = Color(0.1,  0.1,  0.1,  1.0)
-const COLOR_SAND  = Color(0.86, 0.73, 0.36, 1.0)
-const COLOR_WATER = Color(0.0,  0.4,  0.9,  1.0)
-const COLOR_STONE = Color(0.5,  0.5,  0.5,  1.0)
-const COLOR_VAPOR = Color(0.85, 0.90, 0.95, 0.45)
+const AIR = 0
+const SAND = 1
+const WATER = 2
+const ROCK = 3
+const VAPOR = 4
+
+const MATERIAL_COLORS = [
+	Color(0.1,  0.1,  0.1,  1.0),  # Air
+	Color(0.86, 0.73, 0.36, 1.0),  # Sand
+	Color(0.0,  0.4,  0.9,  1.0),  # Water
+	Color(0.5,  0.5,  0.5,  1.0),  # Rock
+	Color(0.85, 0.90, 0.95, 0.45)  # Vapor
+]
+
+func draw(index : int, variance: float) -> Color:
+	if index == 0:
+		return MATERIAL_COLORS[index]
+	if index == ROCK:
+		return Color(
+			MATERIAL_COLORS[index].r,
+			MATERIAL_COLORS[index].g + 0.05 * variance,
+			MATERIAL_COLORS[index].b + 0.05 * variance,
+			MATERIAL_COLORS[index].a
+		)
+	return Color(
+		MATERIAL_COLORS[index].r,
+		MATERIAL_COLORS[index].g + 0.15 * variance,
+		MATERIAL_COLORS[index].b + 0.15 * variance,
+		MATERIAL_COLORS[index].a
+	)
+
+var TEST : int = 0
 
 func initialize_simple_pattern(texture_rid: RID) -> void:
 	var data = PackedFloat32Array()
 	data.resize(WIDTH * HEIGHT * 4)
 	
-	# Draw a little bowl/level design to get started
 	for y in range(HEIGHT):
 		for x in range(WIDTH):
+			var variance = randf() - 0.5
 			var idx = (y * WIDTH + x) * 4
-			var color = COLOR_AIR
+			var color = draw(AIR, variance) 
+
+			var H = HEIGHT / 6
+			var W = WIDTH / 6
+			if y > 1.5 * H and y < 2.5 * H and x > 2.5 * W and x < 3.5 * W:
+				color = draw(SAND, variance)
 			
-			if y > 450 and y < 470 and x > 100 and x < 412:
-				color = COLOR_STONE
-			
-			if y > 350 and y <= 450 and (x > 100 and x < 120 or x > 392 and x < 412):
-				color = COLOR_STONE
-				
 			data[idx] = color.r
 			data[idx + 1] = color.g
 			data[idx + 2] = color.b
@@ -179,35 +213,35 @@ func _unhandled_input(event):
 		if event.keycode == KEY_SPACE:
 			is_frozen = !is_frozen
 			if is_frozen:
-				$CanvasLayer/StatusVBoxContainer/Simulation.text = "Simulation: Frozen"
+				SIMULATION.text = "Simulation: Frozen"
 			else:
-				$CanvasLayer/StatusVBoxContainer/Simulation.text = "Simulation: Running"
+				SIMULATION.text = "Simulation: Running"
 		elif event.keycode == KEY_ESCAPE:
 			do_reset = true
 		elif event.keycode == KEY_UP:
 			increase_brush_size()
-			$CanvasLayer/StatusVBoxContainer/BrushSize.text = "Brush size: %d" % brush_size
+			BRUSHSIZE.text = "Brush size: %d" % brush_size
 		elif event.keycode == KEY_DOWN:
 			decrease_brush_size()
-			$CanvasLayer/StatusVBoxContainer/BrushSize.text = "Brush size: %d" % brush_size
+			BRUSHSIZE.text = "Brush size: %d" % brush_size
 		elif event.keycode == KEY_S:
-			$CanvasLayer/StatusVBoxContainer/CurrentSelected.text = "Selected: Sand"
+			CURRENTSELECTED.text = "Selected: Sand"
 			select_sand()
 		elif event.keycode == KEY_R:
-			$CanvasLayer/StatusVBoxContainer/CurrentSelected.text = "Selected: Rock"
+			CURRENTSELECTED.text = "Selected: Rock"
 			select_stone()
 		elif event.keycode == KEY_W:
-			$CanvasLayer/StatusVBoxContainer/CurrentSelected.text = "Selected: Water"
+			CURRENTSELECTED.text = "Selected: Water"
 			select_water()
 		elif event.keycode == KEY_A:
-			$CanvasLayer/StatusVBoxContainer/CurrentSelected.text = "Selected: Air"
+			CURRENTSELECTED.text = "Selected: Air"
 			select_air()
-
 
 func _process(_delta: float) -> void:
 	if not rd or not pipeline.is_valid():
 		return
-		
+	
+	
 	for i in range(2):
 		total_frames += 1
 		
@@ -245,28 +279,76 @@ func _process(_delta: float) -> void:
 	tex_rd.texture_rd_rid = textures[current_texture_index]
 	texture = tex_rd
 	
-	if total_frames % 30 == 0:
-		var counts = read_counters()
-		$CanvasLayer/CounterHBoxContainer/SandCounter.text = "%d" % counts[0]
-		$CanvasLayer/CounterHBoxContainer/RockCounter.text = "%d" % counts[1]
-		$CanvasLayer/CounterHBoxContainer/WaterCounter.text = "%d" % counts[2]
-
+	#if total_frames % 30 == 0:
+		#var counts = read_counters()
+		#$CanvasLayer/Counters/SandCounter.text = "%d" % counts[0]
+		#$CanvasLayer/Counters/RockCounter.text = "%d" % counts[1]
+		#$CanvasLayer/Counters/WaterCounter.text = "%d" % counts[2]
+		
 func select_sand() -> void:
 	selected_material = 1
-	$CanvasLayer/StatusVBoxContainer/CurrentSelected.text = "Selected: Sand"
 func select_stone() -> void:
 	selected_material = 2
-	$CanvasLayer/StatusVBoxContainer/CurrentSelected.text = "Selected: Rock"
 func select_air() -> void:
 	selected_material = 3
-	$CanvasLayer/StatusVBoxContainer/CurrentSelected.text = "Selected: Air"
 func select_water() -> void:
 	selected_material = 4
-	$CanvasLayer/StatusVBoxContainer/CurrentSelected.text = "Selected: Water"
 
 func increase_brush_size() -> void:
 	brush_size = clamp(brush_size + 2, 3, 30)
-	$CanvasLayer/StatusVBoxContainer/BrushSize.text = "Brush size: %d" % brush_size
+	BRUSHSIZE.text = "Brush size: %d" % brush_size
 func decrease_brush_size() -> void:
 	brush_size = clamp(brush_size - 2, 3, 30)
-	$CanvasLayer/StatusVBoxContainer/BrushSize.text = "Brush size: %d" % brush_size
+	BRUSHSIZE.text = "Brush size: %d" % brush_size
+
+func refresh_dropdown() -> void:
+	PRESETLIST.clear()
+	
+	var dir = DirAccess.open("res://presets/")
+	if not dir:
+		DirAccess.make_dir_recursive_absolute("res://presets/")
+		return
+	
+	dir.list_dir_begin()
+	var filename = dir.get_next()
+	while filename != "":
+		if filename.ends_with(".bin"):
+			PRESETLIST.add_item(filename.get_basename())
+		filename = dir.get_next()
+	dir.list_dir_end()
+
+#---------------PRESETS--------------------------------#
+
+func save_texture(texture_rid: RID, path: String) -> void:
+	var raw = rd.texture_get_data(texture_rid, 0)
+	var file = FileAccess.open(path, FileAccess.WRITE)
+	file.store_buffer(raw)
+	file.close()
+	print("Saved to ", path)
+	
+func load_texture(texture_rid: RID, path: String) -> void:
+	if not FileAccess.file_exists(path):
+		printerr("File not found: ", path)
+		return
+	var file = FileAccess.open(path, FileAccess.READ)
+	var raw = file.get_buffer(file.get_length())
+	file.close()
+	rd.texture_update(texture_rid, 0, raw)
+	print("Loaded from ", path)
+
+func preset_selector(index: int) -> void:
+	var selected = PRESETLIST.get_item_text(index)
+	if selected == "":
+		printerr("Nothing selected")
+		return
+		
+	load_texture(textures[0],"res://presets/%s.bin" % selected)
+	load_texture(textures[1],"res://presets/%s.bin" % selected)
+
+func save_button() -> void:
+	var filename = $CanvasLayer/Presets/Name.text.strip_edges()
+	if filename == "":
+		printerr("No filename entered")
+		return
+	save_texture(textures[current_texture_index], "res://presets/%s.bin" % filename)
+	refresh_dropdown()
