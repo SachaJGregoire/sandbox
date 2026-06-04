@@ -207,7 +207,7 @@ func _gui_input(event):
 		is_drawing = event.pressed
 
 
-func _unhandled_input(event):
+func _unhandled_input(event):  
 	if event is InputEventKey and event.pressed:
 		
 		if event.keycode == KEY_SPACE:
