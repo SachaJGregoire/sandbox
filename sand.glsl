@@ -470,9 +470,8 @@ void swap(inout int a, inout int b) {
 }
 
 void update_marg(ivec2 coord) {
-	// TODO: border movement instead of just copy pasting
 	// TODO: Make move_prob based on dispersion rate?
-	float liquid_move_prob = 0.5;
+	float liquid_move_prob = 0.75;
 	// Setting up offset (I think the 4offset looks better than the 2offset, but both work)
 	int offset = params.frame_count % 4;
 	int offset_x = (offset == 1 || offset == 2) ? 1 : 0;
@@ -481,33 +480,38 @@ void update_marg(ivec2 coord) {
 	//int offset_y = params.frame_count % 2;
 
 	// Hande top and left margins
-	if (coord.x == 0 && offset_x == 1) {
+	if (coord.y == 0 && offset_y == 1) {
 		imageStore(output_grid, coord, imageLoad(input_grid, coord));
 		return;
 	}
-	if (coord.y == 0 && offset_y == 1) {
+	if (coord.x == 0 && offset_x == 1 && coord.y % 2 == offset_y && coord.y + 1 < HEIGHT) {
+		vec4 T_color = imageLoad(input_grid, coord			  	);
+		vec4 B_color = imageLoad(input_grid, coord + ivec2(0, 1));
+		Particle T = decode(T_color);
+		Particle B = decode(B_color);
+		if (T.state != Static && T.density > B.density) swap(T_color, B_color);
+		imageStore(output_grid, coord			   , T_color);
+		imageStore(output_grid, coord + ivec2(0, 1), B_color);
+		return;
+	}
+	// Handle bottom and right margins
+	if (coord.y == HEIGHT - 1 && coord.y % 2 == offset_y) {
 		imageStore(output_grid, coord, imageLoad(input_grid, coord));
+		return;
+	}
+	if (coord.x == WIDTH - 1 && coord.x % 2 == offset_x && coord.y % 2 == offset_y && coord.y + 1 < HEIGHT) {
+		vec4 T_color = imageLoad(input_grid, coord			  	);
+		vec4 B_color = imageLoad(input_grid, coord + ivec2(0, 1));
+		Particle T = decode(T_color);
+		Particle B = decode(B_color);
+		if (T.state != Static && T.density > B.density) swap(T_color, B_color);
+		imageStore(output_grid, coord			   , T_color);
+		imageStore(output_grid, coord + ivec2(0, 1), B_color);
 		return;
 	}
 
 	// Return for cells that are not the representative (TL) of their margolus neighborhood
 	if (coord.x % 2 != offset_x || coord.y % 2 != offset_y) return;
-
-	// Handle right and bottom margins
-	if (coord.x + 1 == WIDTH && coord.y + 1 == HEIGHT) {
-		imageStore(output_grid, coord, imageLoad(input_grid, coord));
-		return;
-	}
-	if (coord.x + 1 == WIDTH) {
-		imageStore(output_grid, coord, imageLoad(input_grid, coord));
-		imageStore(output_grid, coord + ivec2(0, 1), imageLoad(input_grid, coord + ivec2(0, 1)));
-		return;
-	}
-	if (coord.y + 1 == HEIGHT) {
-		imageStore(output_grid, coord, imageLoad(input_grid, coord));
-		imageStore(output_grid, coord + ivec2(1, 0), imageLoad(input_grid, coord + ivec2(1, 0)));
-		return;
-	}
 
 	// Movement logic
 	vec4 TL_color = imageLoad(input_grid, coord			  	 );
