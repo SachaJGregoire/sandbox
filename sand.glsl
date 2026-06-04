@@ -32,9 +32,13 @@ bool coin(vec2 coord, int frame, float threshold) {
 }
 bool coin(vec2 coord, int frame) { return coin(coord, frame, 0.5); }
 
+float hash3(vec2 p, int frame) {	
+    vec3 x = vec3(p, float(frame));
+    return fract(sin(dot(x, vec3(12.9898, 78.233, 37.719))) * 43758.5453);
+}
+
 bool shimmer(vec2 coord, int frame) {
-	float r = hash2t(coord, frame + 7717);
-	return r < 0.005;
+	return hash3(coord, frame + 7717) < 0.005;
 }
 
 const int WIDTH  = 512;
@@ -628,7 +632,7 @@ void update_marg(ivec2 coord) {
 
 
 void main() {
-	int method = 1;
+	int method = 0;
 	ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
 	if (coord.x >= WIDTH || coord.y >= HEIGHT) return;
 	if (params.is_frozen == 0) {
