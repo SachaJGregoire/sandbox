@@ -296,7 +296,7 @@ func select(x: int) -> void:
 	selected_material = x
 
 func change_brush_size(x: int) -> void:
-	brush_size = clamp(brush_size + x, 3, 30)
+	brush_size = clamp(brush_size + x, 1, 100)
 	BRUSHSIZE.text = "Brush size: %d" % brush_size
 
 func refresh_dropdown() -> void:

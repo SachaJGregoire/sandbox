@@ -3,7 +3,7 @@
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 layout(set = 0, binding = 0, rgba32f) uniform readonly image2D input_grid;
-layout(set = 0, binding = 1, rgba32f) uniform writeonly image2D output_grid;
+layout(set = 0, binding = 1, rgba32f) uniform restrict image2D output_grid;
 
 layout(set = 0, binding = 2) buffer ParticleCounter {
 	uint sand_count;
@@ -119,7 +119,7 @@ void draw(ivec2 coord) {
 	}
 
 	if (decode(state).mat != Air || !coin(coord, params.frame_count)) return;
-
+	
 	float variance = (hash3(coord, params.frame_count) - 0.5);
 	imageStore(output_grid, coord, material_colors[draw_mode] + vec4(0.0, 0.15*variance, 0.15*variance, 0.0));
 }
@@ -303,12 +303,17 @@ void update_gas		(ivec2 coord, int move_x, int move_y, vec4 current_color) {
     ivec2 above = coord + ivec2(0, -1);
     int state_above = get_state(above);
 
-	// Rise above Solids and Liquids
-    if (state_above == Solid || state_above == Liquid) {
+	// Rise above Solids
+    if (state_above == Solid) {
         imageStore(output_grid, coord, imageLoad(input_grid, above));
         return;
     }
-    
+	// Rise above Liquids
+	if (state_above == Liquid && get_state(coord + ivec2(0, -2)) != Solid) {
+        imageStore(output_grid, coord, imageLoad(input_grid, above));
+        return;
+    }
+
     // Rise through Air
     if (get_mat(above) == Air) {
 		int state_above_above = get_state(coord + ivec2(0, -2));
@@ -757,6 +762,7 @@ void main() {
 
 	/*
 	Probably this will need to be moved into the draw function if we still want to use it.
+	*/
 
 	int next_state = decode(imageLoad(output_grid, coord)).mat;
 	
@@ -764,5 +770,4 @@ void main() {
 	else if (next_state == Water)	atomicAdd(counters.water_count, 1u);
 	else if (next_state == Stone)	atomicAdd(counters.stone_count, 1u);
 	else if (next_state == Vapor)	atomicAdd(counters.vapor_count, 1u);
-	*/
 }
