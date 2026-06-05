@@ -33,7 +33,7 @@ float hash3(vec2 p, int frame) {
 }
 
 bool coin(vec2 coord, int frame, float threshold) {
-	return hash3(coord, frame) < threshold;
+	return hash2t(coord, frame) < threshold;
 }
 bool coin(vec2 coord, int frame) { return coin(coord, frame, 0.5); }
 
@@ -81,7 +81,7 @@ struct Particle {
 const Particle properties[count_material] = Particle[count_material](
 //           mat,   state,  density, topple, dispersion
 	Particle(Air,   Gas,    10,   	0.0,  0),
-	Particle(Sand,  Solid,  100, 	0.2,  0),
+	Particle(Sand,  Solid,  100, 	0.3,  0),
 	Particle(Water, Liquid, 50,  	1.0,  6),
 	Particle(Stone, Static, 255, 	0.0,  0),
 	Particle(Vapor, Gas,    5,  	1.0,  12)
@@ -120,7 +120,7 @@ void draw(ivec2 coord) {
 
 	if (decode(state).mat != Air || !coin(coord, params.frame_count)) return;
 
-	float variance = (hash2t(coord, params.frame_count) - 0.5);
+	float variance = (hash3(coord, params.frame_count) - 0.5);
 	imageStore(output_grid, coord, material_colors[draw_mode] + vec4(0.0, 0.15*variance, 0.15*variance, 0.0));
 }
 
@@ -137,7 +137,6 @@ int get_mat(ivec2 p) {
 }
 
 int get_water_move(ivec2 source, int dx, int dy, int dispersion, int frame) {
-	// TODO: why coin?
 	if (!coin(source, frame)) return 0;
 	
 	for (int i = 0; i < dispersion; i++) {
@@ -152,7 +151,6 @@ int get_water_move(ivec2 source, int dx, int dy, int dispersion, int frame) {
 }
 
 int get_gas_move(ivec2 source, int dx, int dy, int dispersion, int frame) {
-	// TODO: why coin?
 	if (!coin(source, frame)) return 0;
 	
 	for (int i = 0; i < dispersion; i++) {
@@ -161,7 +159,7 @@ int get_gas_move(ivec2 source, int dx, int dy, int dispersion, int frame) {
 		// Do not disperse through non-air particles
 		if (get_mat(target) != Air) return i;
 		// Do not disperse upwards if there is a non-gas particle above the target
-        if (get_state(target + ivec2(0, -1)) != Gas) return i;
+        if (get_state(target + ivec2(0,-1)) != Gas) return i;
 		// Do not disperse upwards if there is a gas particle below the target
         if (get_state(target + ivec2(0, 1)) == Gas && get_mat(target + ivec2(0, 1)) != Air) return i;
 	}
@@ -183,7 +181,7 @@ void update_solid	(ivec2 coord, int move_x, int move_y, vec4 current_color) {
 	// Diagonal fall
 	ivec2 target = coord + ivec2(move_x, 1);
 	ivec2 side 	 = coord + ivec2(move_x, 0);
-	if (move_y != 1 || get_state(target) != Gas || get_state(side) != Gas || !coin(coord, params.frame_count)) {
+	if (move_y != 1 || get_state(target) != Gas || get_state(side) != Gas || !coin(coord, params.frame_count, decode(imageLoad(input_grid, coord)).topple_prob)) {
 		imageStore(output_grid, coord, current_color);
 		return;
 	}
@@ -191,7 +189,6 @@ void update_solid	(ivec2 coord, int move_x, int move_y, vec4 current_color) {
 	// TODO: Change Air to correct color
 	// TODO: Fix topple_prob
 	imageStore(output_grid, coord, material_colors[Air]);
-	return;
 }
 
 void update_liquid	(ivec2 coord, int move_x, int move_y, vec4 current_color) {
@@ -256,7 +253,7 @@ void update_air		(ivec2 coord, int move_x, int move_y, vec4 current_color) {
 		int state_below = get_state(source + ivec2(0, 1));
 		if (state_below != Gas && state_below != Liquid) {
 			int state_side = get_state(source + ivec2(move_x, 0));
-			if (state_side == Gas && coin(source, params.frame_count)) {
+			if (state_side == Gas && coin(source, params.frame_count, decode(imageLoad(input_grid, source)).topple_prob)) {
 				imageStore(output_grid, coord, imageLoad(input_grid, source));
 				return;
 			}
@@ -286,7 +283,7 @@ void update_air		(ivec2 coord, int move_x, int move_y, vec4 current_color) {
         ivec2 source = coord - ivec2(move_x * i, -move_y * i);
         int state_source = get_state(source);
         
-        if (state_source != Gas || get_mat(source) == Air) continue;
+        if (get_mat(source) == Air) continue;
 		if (state_source == Solid || state_source == Static) break;
 
         int state_above_source = get_state(source + ivec2(0, -1));
