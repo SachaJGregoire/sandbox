@@ -75,10 +75,11 @@ func create_texture() -> RID:
 
 func create_counter_buffer() -> RID:
 	var data = PackedInt32Array()
-	data.resize(3)
+	data.resize(4)
 	data[0] = 0  # sand
 	data[1] = 0  # rock
 	data[2] = 0  # water
+	data[3] = 0  # vapor
 	return rd.storage_buffer_create(data.size() * 4, data.to_byte_array())
 
 func create_compute_pipeline() -> bool:
@@ -200,7 +201,7 @@ func initialize_simple_pattern(texture_rid: RID) -> void:
 func read_counters() -> Array:
 	var raw  = rd.buffer_get_data(counter_buffer)
 	var ints = raw.to_int32_array()
-	return [ints[0], ints[1], ints[2]]  # [sand, rock, water]
+	return [ints[0], ints[1], ints[2], ints[3]]  # [sand, rock, water, vapor]
 
 
 func _gui_input(event):
@@ -245,9 +246,11 @@ func _process(_delta: float) -> void:
 		return
 	
 	
-	for i in range(2):
+	for i in range(4):
 		total_frames += 1
 		
+		rd.buffer_clear(counter_buffer, 0, 16)
+
 		var input_idx = current_texture_index
 		var output_idx = 1 - current_texture_index
 		
@@ -282,11 +285,12 @@ func _process(_delta: float) -> void:
 	tex_rd.texture_rd_rid = textures[current_texture_index]
 	texture = tex_rd
 	
-	#if total_frames % 30 == 0:
-		#var counts = read_counters()
-		#$CanvasLayer/Counters/SandCounter.text = "%d" % counts[0]
-		#$CanvasLayer/Counters/RockCounter.text = "%d" % counts[1]
-		#$CanvasLayer/Counters/WaterCounter.text = "%d" % counts[2]
+	if total_frames % 30 == 0:
+		var counts = read_counters()
+		$CanvasLayer/Counters/SandCounter.text = "%d" % counts[0]
+		$CanvasLayer/Counters/RockCounter.text = "%d" % counts[1]
+		$CanvasLayer/Counters/WaterCounter.text = "%d" % counts[2]
+		$CanvasLayer/Counters/VaporCounter.text = "%d" % counts[3]
 
 func select(x: int) -> void:
 	selected_material = x

@@ -9,6 +9,7 @@ layout(set = 0, binding = 2) buffer ParticleCounter {
 	uint sand_count;
 	uint stone_count;
 	uint water_count;
+	uint vapor_count;
 } counters;
 
 // We use Push Constants to quickly send mouse input from GDScript
@@ -150,6 +151,24 @@ int get_water_move(ivec2 source, int dx, int dy, int dispersion, int frame) {
 	return dispersion;
 }
 
+int get_gas_move(ivec2 source, int dx, int dy, int dispersion, int frame) {
+	// TODO: why coin?
+	if (!coin(source, frame)) return 0;
+	
+	for (int i = 0; i < dispersion; i++) {
+		ivec2 target = source + ivec2(dx * (i+1), dy * (i+1));
+		
+		// Do not disperse through non-air particles
+		if (get_mat(target) != Air) return i;
+		// Do not disperse upwards if there is a non-gas particle above the target
+        if (get_state(target + ivec2(0, -1)) != Gas) return i;
+		// Do not disperse upwards if there is a gas particle below the target
+        if (get_state(target + ivec2(0, 1)) == Gas && get_mat(target + ivec2(0, 1)) != Air) return i;
+	}
+	return dispersion;
+}
+
+
 
 
 void update_solid	(ivec2 coord, int move_x, int move_y, vec4 current_color) {
@@ -211,7 +230,10 @@ void update_liquid	(ivec2 coord, int move_x, int move_y, vec4 current_color) {
 
 void update_air		(ivec2 coord, int move_x, int move_y, vec4 current_color) {
 	ivec2 above = coord + ivec2(0, -1);
+	ivec2 below = coord + ivec2(0, 1);
 	int state_above = get_state(above);
+    int state_below = get_state(below);
+
 	// Vertical Solid fall
 	if (state_above == Solid) {
 		imageStore(output_grid, coord, imageLoad(input_grid, above));
@@ -222,6 +244,11 @@ void update_air		(ivec2 coord, int move_x, int move_y, vec4 current_color) {
 		imageStore(output_grid, coord, imageLoad(input_grid, above));
 		return;
 	}
+	// Vertical Gas rise
+    if (state_below == Gas && get_mat(below) != Air) {
+        imageStore(output_grid, coord, imageLoad(input_grid, below));
+        return;
+    }
 
 	// Diagonal Solid fall
 	ivec2 source = coord - ivec2(move_x, move_y);
@@ -254,11 +281,69 @@ void update_air		(ivec2 coord, int move_x, int move_y, vec4 current_color) {
 		return;
 	}
 
+	// Horizontal or diagonal Gas rise
+    for (int i = 1; i <= properties[Vapor].dispersion_rate; i++) {
+        ivec2 source = coord - ivec2(move_x * i, -move_y * i);
+        int state_source = get_state(source);
+        
+        if (state_source != Gas || get_mat(source) == Air) continue;
+		if (state_source == Solid || state_source == Static) break;
+
+        int state_above_source = get_state(source + ivec2(0, -1));
+		int material_above_source = get_mat(source + ivec2(0, -1));
+        
+        if (state_above_source == Solid || state_above_source == Liquid || material_above_source == Air) break;
+        if (get_gas_move(source, move_x, -move_y, properties[Vapor].dispersion_rate, params.frame_count) != i) break;
+
+        imageStore(output_grid, coord, imageLoad(input_grid, source));
+        return;
+    }
+
 	imageStore(output_grid, coord, current_color);
 }
 
 void update_gas		(ivec2 coord, int move_x, int move_y, vec4 current_color) {
-	int TODO = 1;
+    ivec2 above = coord + ivec2(0, -1);
+    int state_above = get_state(above);
+
+	// Rise above Solids and Liquids
+    if (state_above == Solid || state_above == Liquid) {
+        imageStore(output_grid, coord, imageLoad(input_grid, above));
+        return;
+    }
+    
+    // Rise through Air
+    if (get_mat(above) == Air) {
+		int state_above_above = get_state(coord + ivec2(0, -2));
+
+		bool falling_solid = (state_above_above == Solid);
+        bool falling_liquid = (state_above_above == Liquid && get_state(coord + ivec2(0, -3)) != Solid);
+
+		// Do not rise if a Solid or Liquid particle will fall in the target
+		if (!falling_solid && !falling_liquid) {
+			imageStore(output_grid, coord, imageLoad(input_grid, above));
+			return;
+		} else {
+			imageStore(output_grid, coord, current_color);
+            return;
+		}
+    }
+
+	// Horizontal or diagonal fall
+    int move = get_gas_move(coord, move_x, -move_y, properties[Vapor].dispersion_rate, params.frame_count);
+    if (move > 0) {
+		// TODO: Change Air to correct color
+        imageStore(output_grid, coord, material_colors[Air]);
+        return;
+    }    
+    if (shimmer(coord, params.frame_count)) {                    
+        float variance = (hash2t(coord, params.frame_count) - 0.5);
+        vec4 next_color = material_colors[decode(current_color).mat] + vec4(0.0, 0.15*variance, 0.15*variance, 0.0);
+        imageStore(output_grid, coord, next_color);
+        return;
+    }
+
+    imageStore(output_grid, coord, current_color);
 }
 
 void update(ivec2 coord) {
@@ -676,17 +761,11 @@ void main() {
 	/*
 	Probably this will need to be moved into the draw function if we still want to use it.
 
-	if (coord == ivec2(0, 0)) {
-		atomicExchange(counters.sand_count,  0u);
-		atomicExchange(counters.water_count, 0u);
-		atomicExchange(counters.stone_count, 0u);
-	}
-
-	barrier();
-	memoryBarrierBuffer();
-
-	if		(next_state == Sand)  atomicAdd(counters.sand_count,  1u);
-	else if (next_state == Water) atomicAdd(counters.water_count, 1u);
-	else if (next_state == Stone) atomicAdd(counters.stone_count, 1u);
+	int next_state = decode(imageLoad(output_grid, coord)).mat;
+	
+	if		(next_state == Sand) 	atomicAdd(counters.sand_count,  1u);
+	else if (next_state == Water)	atomicAdd(counters.water_count, 1u);
+	else if (next_state == Stone)	atomicAdd(counters.stone_count, 1u);
+	else if (next_state == Vapor)	atomicAdd(counters.vapor_count, 1u);
 	*/
 }

@@ -31,9 +31,9 @@ script = ExtResource("1_ig7tw")
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -340.0
+offset_left = -425.0
 offset_top = 10.0
-offset_right = 72.0
+offset_right = -9.0
 offset_bottom = 60.0
 grow_horizontal = 0
 
@@ -56,6 +56,12 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 17
 text = "Water"
 
+[node name="VaporButton" type="Button" parent="TextureRect/CanvasLayer/RightHBoxContainer" unique_id=1593401647]
+custom_minimum_size = Vector2(80, 30)
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+text = "Vapor"
+
 [node name="AirButton" type="Button" parent="TextureRect/CanvasLayer/RightHBoxContainer" unique_id=1844384132]
 custom_minimum_size = Vector2(80, 30)
 layout_mode = 2
@@ -63,9 +69,9 @@ theme_override_font_sizes/font_size = 17
 text = "Air"
 
 [node name="BrushStuff" type="VBoxContainer" parent="TextureRect/CanvasLayer" unique_id=1659679079]
-offset_left = 430.0
+offset_left = 357.0
 offset_top = 25.0
-offset_right = 536.0
+offset_right = 463.0
 offset_bottom = 120.0
 
 [node name="BrushSize" type="Label" parent="TextureRect/CanvasLayer/BrushStuff" unique_id=963681854]
@@ -85,9 +91,9 @@ theme_override_font_sizes/font_size = 17
 text = "-"
 
 [node name="Counters" type="HBoxContainer" parent="TextureRect/CanvasLayer" unique_id=1278594361]
-offset_left = 565.0
+offset_left = 487.0
 offset_top = 60.0
-offset_right = 977.0
+offset_right = 1087.0
 offset_bottom = 110.0
 
 [node name="SandCounter" type="Label" parent="TextureRect/CanvasLayer/Counters" unique_id=103942938]
@@ -99,6 +105,10 @@ custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
 
 [node name="WaterCounter" type="Label" parent="TextureRect/CanvasLayer/Counters" unique_id=293309223]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+
+[node name="VaporCounter" type="Label" parent="TextureRect/CanvasLayer/Counters" unique_id=1229051009]
 custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
 
@@ -133,12 +143,12 @@ placeholder_text = "Enter filename..."
 layout_mode = 2
 text = "Save"
 
-[connection signal="pressed" from="TextureRect/CanvasLayer/RightHBoxContainer/AirButton" 	to="TextureRect" method="select" binds= [0]]
-[connection signal="pressed" from="TextureRect/CanvasLayer/RightHBoxContainer/SandButton" 	to="TextureRect" method="select" binds= [1]]
-[connection signal="pressed" from="TextureRect/CanvasLayer/RightHBoxContainer/WaterButton" 	to="TextureRect" method="select" binds= [2]]
-[connection signal="pressed" from="TextureRect/CanvasLayer/RightHBoxContainer/RockButton" 	to="TextureRect" method="select" binds= [3]]
-[connection signal="pressed" from="TextureRect/CanvasLayer/RightHBoxContainer/VaporButton" 	to="TextureRect" method="select" binds= [4]]
-[connection signal="pressed" from="TextureRect/CanvasLayer/BrushStuff/+" to="TextureRect" method="change_brush_size" binds= [ 1]]
+[connection signal="pressed" from="TextureRect/CanvasLayer/RightHBoxContainer/SandButton" to="TextureRect" method="select" binds= [1]]
+[connection signal="pressed" from="TextureRect/CanvasLayer/RightHBoxContainer/RockButton" to="TextureRect" method="select" binds= [3]]
+[connection signal="pressed" from="TextureRect/CanvasLayer/RightHBoxContainer/WaterButton" to="TextureRect" method="select" binds= [2]]
+[connection signal="pressed" from="TextureRect/CanvasLayer/RightHBoxContainer/VaporButton" to="TextureRect" method="select" binds= [4]]
+[connection signal="pressed" from="TextureRect/CanvasLayer/RightHBoxContainer/AirButton" to="TextureRect" method="select" binds= [0]]
+[connection signal="pressed" from="TextureRect/CanvasLayer/BrushStuff/+" to="TextureRect" method="change_brush_size" binds= [1]]
 [connection signal="pressed" from="TextureRect/CanvasLayer/BrushStuff/-" to="TextureRect" method="change_brush_size" binds= [-1]]
 [connection signal="item_selected" from="TextureRect/CanvasLayer/Presets/PresetsList" to="TextureRect" method="preset_selector"]
 [connection signal="pressed" from="TextureRect/CanvasLayer/Presets/Save" to="TextureRect" method="save_button"]
