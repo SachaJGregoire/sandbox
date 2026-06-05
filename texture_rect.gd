@@ -60,6 +60,8 @@ func _ready():
 	
 	refresh_dropdown()
 	
+	Engine.max_fps = 0
+
 	print("Ready!")
 	
 func create_texture() -> RID:
@@ -225,6 +227,12 @@ func _unhandled_input(event):
 		elif event.keycode == KEY_DOWN:
 			change_brush_size(-1)
 			BRUSHSIZE.text = "Brush size: %d" % brush_size
+		elif event.keycode == KEY_PLUS:
+			Engine.max_fps = clamp(0, Engine.max_fps + 5, 180)
+			print(Engine.max_fps)
+		elif event.keycode == KEY_MINUS:
+			Engine.max_fps = clamp(0, Engine.max_fps - 5, 180)
+			print(Engine.max_fps)
 		elif event.keycode == KEY_A:
 			CURRENTSELECTED.text = "Selected: Air"
 			select(0)
