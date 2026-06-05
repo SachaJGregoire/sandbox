@@ -146,6 +146,7 @@ const SAND = 1
 const WATER = 2
 const ROCK = 3
 const VAPOR = 4
+const COUNT_MATERIAL = 5;
 
 const MATERIAL_COLORS = [
 	Color(0.1,  0.1,  0.1,  1.0),  # Air
@@ -209,7 +210,6 @@ func _gui_input(event):
 
 func _unhandled_input(event):  
 	if event is InputEventKey and event.pressed:
-		
 		if event.keycode == KEY_SPACE:
 			is_frozen = !is_frozen
 			if is_frozen:
@@ -219,23 +219,26 @@ func _unhandled_input(event):
 		elif event.keycode == KEY_ESCAPE:
 			do_reset = true
 		elif event.keycode == KEY_UP:
-			increase_brush_size()
+			change_brush_size(1)
 			BRUSHSIZE.text = "Brush size: %d" % brush_size
 		elif event.keycode == KEY_DOWN:
-			decrease_brush_size()
+			change_brush_size(-1)
 			BRUSHSIZE.text = "Brush size: %d" % brush_size
-		elif event.keycode == KEY_S:
-			CURRENTSELECTED.text = "Selected: Sand"
-			select_sand()
-		elif event.keycode == KEY_R:
-			CURRENTSELECTED.text = "Selected: Rock"
-			select_stone()
-		elif event.keycode == KEY_W:
-			CURRENTSELECTED.text = "Selected: Water"
-			select_water()
 		elif event.keycode == KEY_A:
 			CURRENTSELECTED.text = "Selected: Air"
-			select_air()
+			select(0)
+		elif event.keycode == KEY_S:
+			CURRENTSELECTED.text = "Selected: Sand"
+			select(1)
+		elif event.keycode == KEY_W:
+			CURRENTSELECTED.text = "Selected: Water"
+			select(2)
+		elif event.keycode == KEY_R:
+			CURRENTSELECTED.text = "Selected: Rock"
+			select(3)
+		elif event.keycode == KEY_V:
+			CURRENTSELECTED.text = "Selected: Vapor"
+			select(4)
 
 func _process(_delta: float) -> void:
 	if not rd or not pipeline.is_valid():
@@ -256,13 +259,13 @@ func _process(_delta: float) -> void:
 		var push_bytes = PackedByteArray()
 		push_bytes.resize(32) # must be mult of 16
 		
-		push_bytes.encode_float(0, tex_mouse.x)           					# vec2 mouse_pos.x
-		push_bytes.encode_float(4, tex_mouse.y)           					# vec2 mouse_pos.y
-		push_bytes.encode_float(8, brush_size)           					# float brush_size
-		push_bytes.encode_s32(12, selected_material if is_drawing else 0)   # int selected_material (0 if not drawing)
-		push_bytes.encode_s32(16, total_frames)           					# int frame_count
-		push_bytes.encode_s32(20, 1 if is_frozen else 0)  					# int is_frozen
-		push_bytes.encode_s32(24, 1 if do_reset else 0)   					# int do_reset
+		push_bytes.encode_float(0, tex_mouse.x)           								# vec2 mouse_pos.x
+		push_bytes.encode_float(4, tex_mouse.y)           								# vec2 mouse_pos.y
+		push_bytes.encode_float(8, brush_size)           								# float brush_size
+		push_bytes.encode_s32(12, selected_material if is_drawing else COUNT_MATERIAL)  # int selected_material
+		push_bytes.encode_s32(20, 1 if is_frozen else 0)  								# int is_frozen
+		push_bytes.encode_s32(24, 1 if do_reset else 0)   								# int do_reset
+		push_bytes.encode_s32(16, total_frames)           								# int frame_count
 		
 		rd.compute_list_set_push_constant(compute_list, push_bytes, push_bytes.size())
 		# ---------------------------------------------
@@ -284,21 +287,12 @@ func _process(_delta: float) -> void:
 		#$CanvasLayer/Counters/SandCounter.text = "%d" % counts[0]
 		#$CanvasLayer/Counters/RockCounter.text = "%d" % counts[1]
 		#$CanvasLayer/Counters/WaterCounter.text = "%d" % counts[2]
-		
-func select_sand() -> void:
-	selected_material = 1
-func select_stone() -> void:
-	selected_material = 2
-func select_air() -> void:
-	selected_material = 3
-func select_water() -> void:
-	selected_material = 4
 
-func increase_brush_size() -> void:
-	brush_size = clamp(brush_size + 2, 3, 30)
-	BRUSHSIZE.text = "Brush size: %d" % brush_size
-func decrease_brush_size() -> void:
-	brush_size = clamp(brush_size - 2, 3, 30)
+func select(x: int) -> void:
+	selected_material = x
+
+func change_brush_size(x: int) -> void:
+	brush_size = clamp(brush_size + x, 3, 30)
 	BRUSHSIZE.text = "Brush size: %d" % brush_size
 
 func refresh_dropdown() -> void:

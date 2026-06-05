@@ -135,153 +135,153 @@ int get_mat(ivec2 p) {
 	return decode(imageLoad(input_grid, p)).mat;
 }
 
-int get_water_move_alt(ivec2 source, int dx, int dy, int dispersion, int frame) {
+int get_water_move(ivec2 source, int dx, int dy, int dispersion, int frame) {
 	// TODO: why coin?
 	if (!coin(source, frame)) return 0;
 	
 	for (int i = 0; i < dispersion; i++) {
-		ivec2 target = source + ivec2(dx * i, dy * i);
+		ivec2 target = source + ivec2(dx * (i+1), dy * (i+1));
 		
 		// Do not disperse through non-gas particles
 		if (get_state(target) != Gas) return i;
 		// Do not disperse downwards if there is a non-gas particle above the target
-		if (dy == 1 && get_state(target + ivec2(0, -1)) != Gas) return i; 
+		if (get_state(target + ivec2(0, -1)) != Gas) return i; 
 	}
 	return dispersion;
 }
 
-int get_water_move(ivec2 source, int dx, int dy, int dispersion, int frame) {
-	if (!coin(source, frame)) return 0;
-	
-	int move = 0;
-	for (int i = 1; i <= dispersion; i++) {
-		ivec2 target = source + ivec2(dx * i, dy * i);
-		
-		if (get_mat(target) != Air) break;
-		
-		if (dy == 1) {
-			if (get_mat(source + ivec2(dx * i, dy * i - 1)) != Air) break; 
-		}
 
-		int target_up = get_mat(target + ivec2(0, -1));
-		if (target_up == Sand || target_up == Water) break;
-		
-		move = i;
+
+void update_solid	(ivec2 coord, int move_x, int move_y, vec4 current_color) {
+	ivec2 below = coord + ivec2(0, 1);
+	int state_below = get_state(below);
+	
+	// Fall through Gases and Liquids
+	if (state_below == Gas || state_below == Liquid) {
+		imageStore(output_grid, coord, imageLoad(input_grid, below));
+		return;
 	}
-	return move;
+	// Diagonal fall
+	ivec2 target = coord + ivec2(move_x, 1);
+	ivec2 side 	 = coord + ivec2(move_x, 0);
+	if (move_y != 1 || get_state(target) != Gas || get_state(side) != Gas || !coin(coord, params.frame_count)) {
+		imageStore(output_grid, coord, current_color);
+		return;
+	}
+	
+	// TODO: Change Air to correct color
+	// TODO: Fix topple_prob
+	imageStore(output_grid, coord, material_colors[Air]);
+	return;
 }
 
+void update_liquid	(ivec2 coord, int move_x, int move_y, vec4 current_color) {
+	ivec2 above = coord + ivec2(0,-1);
+	ivec2 below = coord + ivec2(0, 1);
+	int state_above = get_state(above);
+	int state_below = get_state(below);
 
+	// Rise above solids
+	if (state_above == Solid) {
+		imageStore(output_grid, coord, imageLoad(input_grid, above));
+		return;
+	}
+	// Fall through gases
+	if (state_below == Gas) {
+		imageStore(output_grid, coord, imageLoad(input_grid, below));
+		return;
+	}
+
+	// Horizontal or diagonal fall
+	int move = get_water_move(coord, move_x, move_y, properties[Water].dispersion_rate, params.frame_count);
+	if (move > 0) {
+		// TODO: Change Air to correct color
+		imageStore(output_grid, coord, material_colors[Air]);
+		return;
+	}
+	if (shimmer(coord, params.frame_count)) {                    
+		float variance = (hash2t(coord, params.frame_count) - 0.5);
+		vec4 next_color = material_colors[decode(current_color).mat] + vec4(0.0, 0.15*variance, 0.15*variance, 0.0);
+		imageStore(output_grid, coord, next_color);
+		return;
+	}
+
+	imageStore(output_grid, coord, current_color);
+}
+
+void update_air		(ivec2 coord, int move_x, int move_y, vec4 current_color) {
+	ivec2 above = coord + ivec2(0, -1);
+	int state_above = get_state(above);
+	// Vertical Solid fall
+	if (state_above == Solid) {
+		imageStore(output_grid, coord, imageLoad(input_grid, above));
+		return;
+	}
+	// Vertical Liquid fall
+	if (state_above == Liquid && get_state(coord + ivec2(0, -2)) != Solid) {
+		imageStore(output_grid, coord, imageLoad(input_grid, above));
+		return;
+	}
+
+	// Diagonal Solid fall
+	ivec2 source = coord - ivec2(move_x, move_y);
+	if (move_y == 1 && get_state(source) == Solid) {
+		int state_below = get_state(source + ivec2(0, 1));
+		if (state_below != Gas && state_below != Liquid) {
+			int state_side = get_state(source + ivec2(move_x, 0));
+			if (state_side == Gas && coin(source, params.frame_count)) {
+				imageStore(output_grid, coord, imageLoad(input_grid, source));
+				return;
+			}
+		}
+	}
+	
+	// Horizontal or diagonal Liquid fall
+	for (int i = 1; i <= properties[Water].dispersion_rate; i++) {
+		ivec2 source = coord - ivec2(move_x * i, move_y * i);
+		int state_source = get_state(source);
+		
+		if (state_source == Gas) continue;
+		if (state_source == Solid || state_source == Static) break;
+
+		int state_above_source = get_state(source + ivec2(0,-1));
+		int state_below_source = get_state(source + ivec2(0, 1));
+		
+		if (state_below_source == Gas || state_above_source == Solid) break;
+		if (get_water_move(source, move_x, move_y, properties[Water].dispersion_rate, params.frame_count) != i) break;
+
+		imageStore(output_grid, coord, imageLoad(input_grid, source));
+		return;
+	}
+
+	imageStore(output_grid, coord, current_color);
+}
+
+void update_gas		(ivec2 coord, int move_x, int move_y, vec4 current_color) {
+	int TODO = 1;
+}
 
 void update(ivec2 coord) {
 	vec4 current_color  = imageLoad(input_grid, coord);
 	Particle cell = decode(current_color);
-	vec4 next_color = current_color;
 
 	int phase = params.frame_count % 4;
 	int move_x = (phase == 0 || phase == 1) ? -1 : 1; 
 	int move_y = (phase == 0 || phase == 2) ?  0 : 1;
 
-	// SOLID LOGIC
-	if (cell.state == Solid) {
-		ivec2 below = coord + ivec2(0, 1);
-		int state_below = get_state(below);
-		
-		// Fall through Gases and Liquids
-		if (state_below == Gas || state_below == Liquid) {
-			next_color = imageLoad(input_grid, below);
-		}
-		// Diagonal fall
-		else if (move_y == 1) { 
-			ivec2 target = coord + ivec2(move_x, 1);
-			ivec2 side 	 = coord + ivec2(move_x, 0);
-			
-			if (get_state(target) == Gas && get_state(side) == Gas && coin(coord, params.frame_count)) {
-				// TODO: Change Air to correct color
-				// Fix topple_prob
-				next_color = material_colors[Air];
-			}
-		}
-	} 
-	
-	// LIQUID LOGIC
-	else if (cell.state == Liquid) {
-		ivec2 above = coord + ivec2(0,-1);
-		ivec2 below = coord + ivec2(0, 1);
-		int state_above = get_state(above);
-		int state_below = get_state(below);
-
-		// Rise above solids
-		if (state_above == Solid) {
-			next_color = imageLoad(input_grid, above);
-		}
-		// Fall through gases
-		else if (state_below == Gas) {
-			next_color = imageLoad(input_grid, below);
-		}
-		// Horizontal or diagonal fall
-		else {
-			int move = get_water_move(coord, move_x, move_y, properties[Water].dispersion_rate, params.frame_count);
-			if (move > 0) {
-				// TODO: Change Air to correct color
-				next_color = material_colors[Air];
-			} else if (shimmer(coord, params.frame_count)) {                    
-				float variance = (hash2t(coord, params.frame_count) - 0.5);
-				next_color = material_colors[cell.mat] + vec4(0.0, 0.15*variance, 0.15*variance, 0.0);
-			}
-		}
-	} 
-	
-	// AIR LOGIC
-	else if (cell.mat == Air) {
-		bool receiving = false;
-		vec4 incoming_color = material_colors[Air];
-
-		ivec2 above = coord + ivec2(0, -1);
-		int state_above = get_state(above);
-		// Vertical Solid fall
-		if (state_above == Solid) {
-			imageStore(output_grid, coord, imageLoad(input_grid, above));
-			return;
-		}
-		// Vertical Liquid fall
-		else if (state_above == Liquid && get_state(coord + ivec2(0, -2)) != Solid) {
-			imageStore(output_grid, coord, imageLoad(input_grid, above));
-			return;
-		}
-
-		// Diagonal Solid fall
-		ivec2 source = coord - ivec2(move_x, move_y);
-		if (move_y == 1 && get_state(source) == Solid) {
-			int state_below = get_state(source + ivec2(0, 1));
-			if (state_below != Gas && state_below != Liquid) {
-				int state_side = get_state(source + ivec2(move_x, 0));
-				if (state_side == Gas && coin(source, params.frame_count)) {
-					imageStore(output_grid, coord, imageLoad(input_grid, above));
-					return;
-				}
-			}
-		}
-		
-		// Horizontal or diagonal Liquid fall
-		for (int i = 1; i <= properties[Water].dispersion_rate; i++) {
-			ivec2 source = coord - ivec2(move_x * i, move_y * i);
-			int state_source = get_state(source);
-			
-			if (state_source == Gas) continue;
-			if (state_source == Solid || state_source == Static) break;
-
-			int state_above_source = get_state(source + ivec2(0,-1));
-			int state_below_source = get_state(source + ivec2(0, 1));
-			
-			if (state_below_source == Gas || state_above_source == Solid) break;
-			if (get_water_move(source, move_x, move_y, properties[Water].dispersion_rate, params.frame_count) != i) break;
-
-			imageStore(output_grid, coord, imageLoad(input_grid, source));
-			return;
-		}
+	switch (cell.state) {
+		case Static: break;
+		case Solid:
+			update_solid(coord, move_x, move_y, current_color);
+			break;
+		case Liquid:
+			update_liquid(coord, move_x, move_y, current_color);
+			break;
+		case Gas:
+			if (cell.mat == Air) update_air(coord, move_x, move_y, current_color);
+			else 				 update_gas(coord, move_x, move_y, current_color);
+			break;
 	}
-	imageStore(output_grid, coord, next_color);
 }
 
 
