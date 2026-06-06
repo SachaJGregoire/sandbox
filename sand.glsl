@@ -41,8 +41,8 @@ bool shimmer(vec2 coord, int frame) {
 	return hash3(coord, frame + 7717) < 0.005;
 }
 
-const int WIDTH  = 512;
-const int HEIGHT = 512;
+const int WIDTH  = 1024;
+const int HEIGHT = 1024;
 
 const int Static = 0;
 const int Solid = 1;
@@ -741,7 +741,7 @@ void update_marg(ivec2 coord) {
 
 
 void main() {
-	int method = 0;
+	int method = 1;
 	ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
 
 	if (params.do_reset == 1) {

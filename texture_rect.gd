@@ -9,9 +9,10 @@ var uniform_sets: Array[RID] = [RID(), RID()]
 
 var counter_buffer: RID
 
+var tex_rd: Texture2DRD
 
-const WIDTH: int = 512
-const HEIGHT: int = 512
+const WIDTH: int = 1024
+const HEIGHT: int = 1024
 const SHADER_PATH: String = "res://sand.glsl"
 
 var is_frozen: bool = true
@@ -22,6 +23,10 @@ var total_frames: int = 0
 var selected_material: int = 1
 var is_drawing: bool = false
 var brush_size: float = 10
+
+var testing_performance = false;
+var perf_test_samples  : Array[float] = []
+const NB_FRAMES: int = 150
 
 # On ready variables
 @onready var SIMULATION: Label = $CanvasLayer/Status/Simulation
@@ -54,7 +59,7 @@ func _ready():
 	expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	stretch_mode = TextureRect.STRETCH_SCALE
 	
-	var tex_rd = Texture2DRD.new()
+	tex_rd = Texture2DRD.new()
 	tex_rd.texture_rd_rid = textures[0]
 	texture = tex_rd
 	
@@ -176,7 +181,7 @@ func draw(index : int, variance: float) -> Color:
 		MATERIAL_COLORS[index].a
 	)
 
-var TEST : int = 0
+var fill = "empty"
 
 func initialize_simple_pattern(texture_rid: RID) -> void:
 	var data = PackedFloat32Array()
@@ -187,11 +192,16 @@ func initialize_simple_pattern(texture_rid: RID) -> void:
 			var variance = randf() - 0.5
 			var idx = (y * WIDTH + x) * 4
 			var color = draw(AIR, variance) 
-
-			var H = HEIGHT / 6
-			var W = WIDTH / 6
-			if y > 1.5 * H and y < 2.5 * H and x > 2.5 * W and x < 3.5 * W:
-				color = draw(SAND, variance)
+			
+			match fill:
+				"empty":
+					color = MATERIAL_COLORS[AIR]
+				"full_sand":
+					color = draw(SAND, randf() - 0.5)
+				"full_stone":
+					color = draw(ROCK, randf() - 0.5)
+				"half_sand":
+					color = draw(SAND, randf() - 0.5) if y < HEIGHT / 2 else MATERIAL_COLORS[AIR]
 			
 			data[idx] = color.r
 			data[idx + 1] = color.g
@@ -248,16 +258,33 @@ func _unhandled_input(event):
 		elif event.keycode == KEY_V:
 			CURRENTSELECTED.text = "Selected: Vapor"
 			select(4)
+		elif event.keycode == KEY_F1:
+			testing_performance = true
+			perf_test_samples = []
+
+func make_push_bytes() -> PackedByteArray:
+	var tex_mouse  = get_local_mouse_to_texture()
+	var push_bytes = PackedByteArray()
+	push_bytes.resize(32)
+	push_bytes.encode_float(0,  tex_mouse.x)
+	push_bytes.encode_float(4,  tex_mouse.y)
+	push_bytes.encode_float(8,  brush_size)
+	push_bytes.encode_s32(12,   selected_material if is_drawing else COUNT_MATERIAL)
+	push_bytes.encode_s32(16,   total_frames)
+	push_bytes.encode_s32(20,   1 if is_frozen else 0)
+	push_bytes.encode_s32(24,   1 if do_reset else 0)
+	return push_bytes
 
 func _process(_delta: float) -> void:
 	if not rd or not pipeline.is_valid():
 		return
 	
+	#if not testing_performance:
+		#rd.buffer_clear(counter_buffer, 0, 16)
+	
 	for i in range(4):
 		total_frames += 1
 		
-		rd.buffer_clear(counter_buffer, 0, 16)
-
 		var input_idx = current_texture_index
 		var output_idx = 1 - current_texture_index
 		
@@ -273,9 +300,9 @@ func _process(_delta: float) -> void:
 		push_bytes.encode_float(4, tex_mouse.y)           								# vec2 mouse_pos.y
 		push_bytes.encode_float(8, brush_size)           								# float brush_size
 		push_bytes.encode_s32(12, selected_material if is_drawing else COUNT_MATERIAL)  # int selected_material
+		push_bytes.encode_s32(16, total_frames)           								# int frame_count
 		push_bytes.encode_s32(20, 1 if is_frozen else 0)  								# int is_frozen
 		push_bytes.encode_s32(24, 1 if do_reset else 0)   								# int do_reset
-		push_bytes.encode_s32(16, total_frames)           								# int frame_count
 		
 		rd.compute_list_set_push_constant(compute_list, push_bytes, push_bytes.size())
 		# ---------------------------------------------
@@ -284,20 +311,36 @@ func _process(_delta: float) -> void:
 		var groups_y = (HEIGHT + 15) / 16
 		rd.compute_list_dispatch(compute_list, groups_x, groups_y, 1)
 		rd.compute_list_end()
-	
+		
 		current_texture_index = output_idx
 		do_reset = 0
 
-	var tex_rd = Texture2DRD.new()
 	tex_rd.texture_rd_rid = textures[current_texture_index]
 	texture = tex_rd
 	
-	#if total_frames % 30 == 0:
+	if testing_performance and perf_test_samples.size() < NB_FRAMES:
+		var t0  = Time.get_ticks_usec()
+		rd.buffer_get_data(counter_buffer)
+		var t1  = Time.get_ticks_usec()
+		var ms  = (t1 - t0) / 1000.0
+		perf_test_samples.append(ms)
+	elif testing_performance and perf_test_samples.size() >= NB_FRAMES:
+		testing_performance = false
+		perf_test_samples = perf_test_samples.slice(50)
+		print("Average: %fms, Worst: %fms, Best: %fms" % [
+			perf_test_samples.reduce(func(a, b): return a + b) / perf_test_samples.size(),
+			perf_test_samples.max(),
+			perf_test_samples.min()
+		])
+		perf_test_samples = []
+	
+	#if total_frames % 30 == 0 and not testing_performance:
 		#var counts = read_counters()
 		#$CanvasLayer/Counters/SandCounter.text = "%d" % counts[0]
 		#$CanvasLayer/Counters/RockCounter.text = "%d" % counts[1]
 		#$CanvasLayer/Counters/WaterCounter.text = "%d" % counts[2]
 		#$CanvasLayer/Counters/VaporCounter.text = "%d" % counts[3]
+		
 
 func select(x: int) -> void:
 	selected_material = x
@@ -399,8 +442,8 @@ func preset_selector(index: int) -> void:
 	if selected == "":
 		printerr("Nothing selected")
 		return
-		
 	load_texture("res://presets/%s.bin" % selected)
+	testing_performance = true
 
 func save_button() -> void:
 	var filename = $CanvasLayer/Presets/Name.text.strip_edges()
