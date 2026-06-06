@@ -8,22 +8,23 @@ var current_texture_index: int = 0
 var uniform_sets: Array[RID] = [RID(), RID()]
 
 var counter_buffer: RID
-
 var tex_rd: Texture2DRD
 
+# size of the grid
 const WIDTH: int = 1024
 const HEIGHT: int = 1024
 const SHADER_PATH: String = "res://sand.glsl"
 
+# variables for the user input
 var is_frozen: bool = true
 var do_reset: bool = false
 var total_frames: int = 0
 
-# Interactivity variables
 var selected_material: int = 1
 var is_drawing: bool = false
 var brush_size: float = 10
 
+# benchmarking variables
 var testing_performance = false;
 var perf_test_samples  : Array[float] = []
 const NB_FRAMES: int = 150
@@ -34,6 +35,8 @@ const NB_FRAMES: int = 150
 @onready var CURRENTSELECTED: Label = $CanvasLayer/Status/CurrentSelected
 @onready var PRESETLIST: OptionButton = $CanvasLayer/Presets/PresetsList
 
+#--------------------------------------------------------------------------------
+# mostly not changed from GOL template
 func _ready():
 	rd = RenderingServer.get_rendering_device()
 	
@@ -44,8 +47,8 @@ func _ready():
 	textures[0] = create_texture()
 	textures[1] = create_texture()
 	
-	initialize_simple_pattern(textures[0])
-	initialize_simple_pattern(textures[1])
+	initialize(textures[0])
+	initialize(textures[1])
 	
 	counter_buffer = create_counter_buffer()
 	
@@ -63,10 +66,9 @@ func _ready():
 	tex_rd.texture_rd_rid = textures[0]
 	texture = tex_rd
 	
-	refresh_dropdown()
-	
 	Engine.max_fps = 0
-
+	
+	refresh_dropdown()
 	print("Ready!")
 	
 func create_texture(w: int = WIDTH, h: int = HEIGHT) -> RID:
@@ -79,15 +81,6 @@ func create_texture(w: int = WIDTH, h: int = HEIGHT) -> RID:
 						RenderingDevice.TEXTURE_USAGE_SAMPLING_BIT | \
 						RenderingDevice.TEXTURE_USAGE_CAN_COPY_FROM_BIT
 	return rd.texture_create(format, RDTextureView.new())
-
-func create_counter_buffer() -> RID:
-	var data = PackedInt32Array()
-	data.resize(4)
-	data[0] = 0  # sand
-	data[1] = 0  # rock
-	data[2] = 0  # water
-	data[3] = 0  # vapor
-	return rd.storage_buffer_create(data.size() * 4, data.to_byte_array())
 
 func create_compute_pipeline() -> bool:
 	if not FileAccess.file_exists(SHADER_PATH):
@@ -148,7 +141,19 @@ func _exit_tree():
 		if uniform_sets[0].is_valid(): rd.free_rid(uniform_sets[0])
 		if uniform_sets[1].is_valid(): rd.free_rid(uniform_sets[1])
 
+#--------------------------------------------------------------------------------
 
+# creating counter for each particle
+func create_counter_buffer() -> RID:
+	var data = PackedInt32Array()
+	data.resize(4)
+	data[0] = 0  # sand
+	data[1] = 0  # rock
+	data[2] = 0  # water
+	data[3] = 0  # vapor
+	return rd.storage_buffer_create(data.size() * 4, data.to_byte_array())
+
+# variables for the particles
 const AIR = 0
 const SAND = 1
 const WATER = 2
@@ -164,6 +169,7 @@ const MATERIAL_COLORS = [
 	Color(0.85, 0.90, 0.95, 0.45)  # Vapor
 ]
 
+# draw function with variance
 func draw(index : int, variance: float) -> Color:
 	if index == 0:
 		return MATERIAL_COLORS[index]
@@ -181,9 +187,8 @@ func draw(index : int, variance: float) -> Color:
 		MATERIAL_COLORS[index].a
 	)
 
-var fill = "empty"
-
-func initialize_simple_pattern(texture_rid: RID) -> void:
+# initializing to air
+func initialize(texture_rid: RID) -> void:
 	var data = PackedFloat32Array()
 	data.resize(WIDTH * HEIGHT * 4)
 	
@@ -193,16 +198,6 @@ func initialize_simple_pattern(texture_rid: RID) -> void:
 			var idx = (y * WIDTH + x) * 4
 			var color = draw(AIR, variance) 
 			
-			match fill:
-				"empty":
-					color = MATERIAL_COLORS[AIR]
-				"full_sand":
-					color = draw(SAND, randf() - 0.5)
-				"full_stone":
-					color = draw(ROCK, randf() - 0.5)
-				"half_sand":
-					color = draw(SAND, randf() - 0.5) if y < HEIGHT / 2 else MATERIAL_COLORS[AIR]
-			
 			data[idx] = color.r
 			data[idx + 1] = color.g
 			data[idx + 2] = color.b
@@ -210,16 +205,16 @@ func initialize_simple_pattern(texture_rid: RID) -> void:
 			
 	rd.texture_update(texture_rid, 0, data.to_byte_array())
 
+# reading the counters -> CPU stalling
 func read_counters() -> Array:
 	var raw  = rd.buffer_get_data(counter_buffer)
 	var ints = raw.to_int32_array()
 	return [ints[0], ints[1], ints[2], ints[3]]  # [sand, rock, water, vapor]
 
-
+# user input actions
 func _gui_input(event):
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		is_drawing = event.pressed
-
 
 func _unhandled_input(event):  
 	if event is InputEventKey and event.pressed:
@@ -262,6 +257,7 @@ func _unhandled_input(event):
 			testing_performance = true
 			perf_test_samples = []
 
+# Pushing information for user input
 func make_push_bytes() -> PackedByteArray:
 	var tex_mouse  = get_local_mouse_to_texture()
 	var push_bytes = PackedByteArray()
@@ -275,12 +271,13 @@ func make_push_bytes() -> PackedByteArray:
 	push_bytes.encode_s32(24,   1 if do_reset else 0)
 	return push_bytes
 
+# the main function
 func _process(_delta: float) -> void:
 	if not rd or not pipeline.is_valid():
 		return
 	
-	#if not testing_performance:
-		#rd.buffer_clear(counter_buffer, 0, 16)
+	if not testing_performance:
+		rd.buffer_clear(counter_buffer, 0, 16)
 	
 	for i in range(4):
 		total_frames += 1
@@ -292,18 +289,7 @@ func _process(_delta: float) -> void:
 		rd.compute_list_bind_compute_pipeline(compute_list, pipeline)
 		rd.compute_list_bind_uniform_set(compute_list, uniform_sets[input_idx], 0)
 		
-		var tex_mouse = get_local_mouse_to_texture()
-		var push_bytes = PackedByteArray()
-		push_bytes.resize(32) # must be mult of 16
-		
-		push_bytes.encode_float(0, tex_mouse.x)           								# vec2 mouse_pos.x
-		push_bytes.encode_float(4, tex_mouse.y)           								# vec2 mouse_pos.y
-		push_bytes.encode_float(8, brush_size)           								# float brush_size
-		push_bytes.encode_s32(12, selected_material if is_drawing else COUNT_MATERIAL)  # int selected_material
-		push_bytes.encode_s32(16, total_frames)           								# int frame_count
-		push_bytes.encode_s32(20, 1 if is_frozen else 0)  								# int is_frozen
-		push_bytes.encode_s32(24, 1 if do_reset else 0)   								# int do_reset
-		
+		var push_bytes = make_push_bytes() 
 		rd.compute_list_set_push_constant(compute_list, push_bytes, push_bytes.size())
 		# ---------------------------------------------
 		
@@ -333,14 +319,16 @@ func _process(_delta: float) -> void:
 			perf_test_samples.min()
 		])
 		perf_test_samples = []
-	
-	#if total_frames % 30 == 0 and not testing_performance:
-		#var counts = read_counters()
-		#$CanvasLayer/Counters/SandCounter.text = "%d" % counts[0]
-		#$CanvasLayer/Counters/RockCounter.text = "%d" % counts[1]
-		#$CanvasLayer/Counters/WaterCounter.text = "%d" % counts[2]
-		#$CanvasLayer/Counters/VaporCounter.text = "%d" % counts[3]
 		
+	if total_frames % 30 == 0 and not testing_performance:
+		var counts = read_counters()
+		$CanvasLayer/Counters/SandCounter.text = "%d" % counts[0]
+		$CanvasLayer/Counters/RockCounter.text = "%d" % counts[1]
+		$CanvasLayer/Counters/WaterCounter.text = "%d" % counts[2]
+		$CanvasLayer/Counters/VaporCounter.text = "%d" % counts[3]
+		
+
+#--------------------USER-INPUT--------------------------------#
 
 func select(x: int) -> void:
 	selected_material = x
