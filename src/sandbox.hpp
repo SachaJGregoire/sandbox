@@ -14,8 +14,8 @@ class Sandbox : public TextureRect {
     GDCLASS(Sandbox, TextureRect)
 
 private:
-    const int SANDBOX_WIDTH = 2048;
-    const int SANDBOX_HEIGHT = 2048;
+    const int SANDBOX_WIDTH = 1024;
+    const int SANDBOX_HEIGHT = 1024;
 
     int start_x = SANDBOX_WIDTH/1.2;
     int start_y = 20;
