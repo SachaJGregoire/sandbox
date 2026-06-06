@@ -4,6 +4,7 @@
 #include <godot_cpp/classes/texture_rect.hpp>
 #include <godot_cpp/classes/image.hpp>
 #include <godot_cpp/classes/image_texture.hpp>
+#include <godot_cpp/classes/label.hpp>
 #include "grid.hpp"
 #include "materials.hpp"
 
@@ -13,10 +14,10 @@ class Sandbox : public TextureRect {
     GDCLASS(Sandbox, TextureRect)
 
 private:
-    const int SANDBOX_WIDTH = 1600;
-    const int SANDBOX_HEIGHT = 900;
+    const int SANDBOX_WIDTH = 2048;
+    const int SANDBOX_HEIGHT = 2048;
 
-    int start_x = SANDBOX_WIDTH - 100;
+    int start_x = SANDBOX_WIDTH/1.2;
     int start_y = 20;
     int btn_width = 80;
     int btn_height = 35;
@@ -29,6 +30,7 @@ private:
     Mat current_user_material = Mat::Sand;
 
     bool is_frozen = false;
+    godot::Label *perf_label = nullptr;
 
 protected:
     static void _bind_methods();

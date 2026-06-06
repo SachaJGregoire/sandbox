@@ -31,7 +31,7 @@ private:
     bool margolus_offset_X = 0;
     bool margolus_offset_Y = 0;
     double topple_counter = 0;
-    size_t num_threads = 16;
+    size_t num_threads = 11;
     std::vector<std::thread> threads;
 
 public:
@@ -89,7 +89,16 @@ public:
     void update_seq_thread(size_t x_start, size_t y_start, size_t x_end, size_t y_end);
     void update_seq_threaded();
     void update_marg();
-    void update() { update_seq_threaded(); };
+    void update() {
+        auto start = std::chrono::high_resolution_clock::now();
+        update_seq_threaded();
+        auto end = std::chrono::high_resolution_clock::now();
+        last_update_ms = std::chrono::duration_cast<std::chrono::microseconds> (end - start).count() / 1000.0;
+
+    };
+
+    double last_update_ms = 0.0;
+    size_t frame_count = 0;
 };
 
 #endif // GRID_HPP

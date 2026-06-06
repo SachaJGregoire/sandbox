@@ -18,13 +18,21 @@ Sandbox::Sandbox() : grid(SANDBOX_WIDTH, SANDBOX_HEIGHT) {}
 Sandbox::~Sandbox() {}
 
 void Sandbox::_ready() {
+    Vector2i window_size = DisplayServer::get_singleton()->window_get_size();
+
+    set_size(Vector2(window_size.x / 1.2, window_size.y));
+    set_position(Vector2(0, 0));
+
+    set_expand_mode(TextureRect::EXPAND_IGNORE_SIZE);
+    set_stretch_mode(TextureRect::STRETCH_SCALE);
+
     image = Image::create_empty(SANDBOX_WIDTH, SANDBOX_HEIGHT, false, Image::FORMAT_RGBA8);
     texture = ImageTexture::create_from_image(image);
     set_texture(texture);
 
     VBoxContainer *ui_column = memnew(VBoxContainer);
     
-    ui_column->set_position(Vector2(start_x, start_y)); 
+    ui_column->set_position(Vector2(start_x*1.9, start_y)); 
     ui_column->add_theme_constant_override("separation", spacing);
     add_child(ui_column);
 
@@ -36,15 +44,15 @@ void Sandbox::_ready() {
         btn->connect("pressed", Callable(this, "set_material").bind(i));
         ui_column->add_child(btn);
 
-        int btn_y = start_y + (i * (btn_height + spacing));
+        // int btn_y = start_y + (i * (btn_height + spacing));
 
-        for (int x = start_x; x < start_x + btn_width; ++x) {
-            for (int y = btn_y; y < btn_y + btn_height; ++y) {
-                if (x >= 0 && x < SANDBOX_WIDTH && y >= 0 && y < SANDBOX_HEIGHT) {
-                    grid.set(x, y, Mat::Stone);
-                }
-            }
-        }
+        // for (int x = start_x; x < start_x + btn_width; ++x) {
+        //     for (int y = btn_y; y < btn_y + btn_height; ++y) {
+        //         if (x >= 0 && x < SANDBOX_WIDTH && y >= 0 && y < SANDBOX_HEIGHT) {
+        //             grid.set(x, y, Mat::Stone);
+        //         }
+        //     }
+        // }
     }
 
     // generate freeze button
@@ -61,6 +69,10 @@ void Sandbox::_ready() {
     btn_reset->connect("pressed", Callable(this, "reset_scene"));
     ui_column->add_child(btn_reset);
 
+    perf_label = memnew(Label);
+    perf_label->set_position(Vector2(10, 10));
+    add_child(perf_label);
+
     reset_scene();
 
 }
@@ -71,10 +83,11 @@ void Sandbox::_process(double delta) {
 
     if (input->is_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
         Vector2 mouse_pos = get_local_mouse_position();
+        Vector2 size = get_size();
 
-        int mx = static_cast<int>(mouse_pos.x);
-        int my = static_cast<int>(mouse_pos.y);
-        int brush_radius = 15;
+        int mx = static_cast<int>((mouse_pos.x / size.x) * SANDBOX_WIDTH);
+        int my = static_cast<int>((mouse_pos.y / size.y) * SANDBOX_HEIGHT);
+        int brush_radius = 30;
 
         for (int dx = -brush_radius; dx <= brush_radius; dx++) {
             for (int dy = -brush_radius; dy <= brush_radius; dy++) {
@@ -94,6 +107,7 @@ void Sandbox::_process(double delta) {
 
     if (!is_frozen) {
         grid.update();
+        grid.frame_count++;
     }
 
     for (size_t y = 0; y < SANDBOX_HEIGHT; ++y) {
@@ -103,6 +117,9 @@ void Sandbox::_process(double delta) {
     }
     grid.reset_updated();
     texture->update(image);
+
+    if (grid.frame_count % 30 == 0)
+        perf_label->set_text(String("Update: ") + String::num(grid.last_update_ms, 2) + String(" ms"));
 }
 
 void Sandbox::set_material(int material_index) {
@@ -123,17 +140,17 @@ void Sandbox::reset_scene() {
 
     int total_buttons = static_cast<int>(Mat::Count) + 2; 
 
-    for (int i = 0; i < total_buttons; ++i) {
-        int btn_y = start_y + (i * (btn_height + spacing));
+    // for (int i = 0; i < total_buttons; ++i) {
+    //     int btn_y = start_y + (i * (btn_height + spacing));
 
-        for (int x = start_x; x < start_x + btn_width; ++x) {
-            for (int y = btn_y; y < btn_y + btn_height; ++y) {
-                if (x >= 0 && x < SANDBOX_WIDTH && y >= 0 && y < SANDBOX_HEIGHT) {
-                    grid.set(x, y, Mat::Stone);
-                }
-            }
-        }
-    }
+    //     for (int x = start_x; x < start_x + btn_width; ++x) {
+    //         for (int y = btn_y; y < btn_y + btn_height; ++y) {
+    //             if (x >= 0 && x < SANDBOX_WIDTH && y >= 0 && y < SANDBOX_HEIGHT) {
+    //                 grid.set(x, y, Mat::Stone);
+    //             }
+    //         }
+    //     }
+    // }
 
     for (size_t y = 0; y < SANDBOX_HEIGHT; ++y) {
         for (size_t x = 0; x < SANDBOX_WIDTH; ++x) {
