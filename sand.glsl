@@ -28,8 +28,8 @@ float hash2t(vec2 p, int frame) {
 	return fract(sin(dot(p, vec2(12.9898, 78.233)) + float(frame)) * 43758.5453);
 }
 float hash3(vec2 p, int frame) {	
-    vec3 x = vec3(p, float(frame));
-    return fract(sin(dot(x, vec3(12.9898, 78.233, 37.719))) * 43758.5453);
+	vec3 x = vec3(p, float(frame));
+	return fract(sin(dot(x, vec3(12.9898, 78.233, 37.719))) * 43758.5453);
 }
 
 bool coin(vec2 coord, int frame, float threshold) {
@@ -159,9 +159,9 @@ int get_gas_move(ivec2 source, int dx, int dy, int dispersion, int frame) {
 		// Do not disperse through non-air particles
 		if (get_mat(target) != Air) return i;
 		// Do not disperse upwards if there is a non-gas particle above the target
-        if (get_state(target + ivec2(0,-1)) != Gas) return i;
+		if (get_state(target + ivec2(0,-1)) != Gas) return i;
 		// Do not disperse upwards if there is a gas particle below the target
-        if (get_state(target + ivec2(0, 1)) == Gas && get_mat(target + ivec2(0, 1)) != Air) return i;
+		if (get_state(target + ivec2(0, 1)) == Gas && get_mat(target + ivec2(0, 1)) != Air) return i;
 	}
 	return dispersion;
 }
@@ -229,7 +229,7 @@ void update_air		(ivec2 coord, int move_x, int move_y, vec4 current_color) {
 	ivec2 above = coord + ivec2(0, -1);
 	ivec2 below = coord + ivec2(0, 1);
 	int state_above = get_state(above);
-    int state_below = get_state(below);
+	int state_below = get_state(below);
 
 	// Vertical Solid fall
 	if (state_above == Solid) {
@@ -242,10 +242,10 @@ void update_air		(ivec2 coord, int move_x, int move_y, vec4 current_color) {
 		return;
 	}
 	// Vertical Gas rise
-    if (state_below == Gas && get_mat(below) != Air) {
-        imageStore(output_grid, coord, imageLoad(input_grid, below));
-        return;
-    }
+	if (state_below == Gas && get_mat(below) != Air) {
+		imageStore(output_grid, coord, imageLoad(input_grid, below));
+		return;
+	}
 
 	// Diagonal Solid fall
 	ivec2 source = coord - ivec2(move_x, move_y);
@@ -279,47 +279,47 @@ void update_air		(ivec2 coord, int move_x, int move_y, vec4 current_color) {
 	}
 
 	// Horizontal or diagonal Gas rise
-    for (int i = 1; i <= properties[Vapor].dispersion_rate; i++) {
-        ivec2 source = coord - ivec2(move_x * i, -move_y * i);
-        int state_source = get_state(source);
-        
-        if (get_mat(source) == Air) continue;
+	for (int i = 1; i <= properties[Vapor].dispersion_rate; i++) {
+		ivec2 source = coord - ivec2(move_x * i, -move_y * i);
+		int state_source = get_state(source);
+		
+		if (get_mat(source) == Air) continue;
 		if (state_source == Solid || state_source == Static) break;
 
-        int state_above_source = get_state(source + ivec2(0, -1));
+		int state_above_source = get_state(source + ivec2(0, -1));
 		int material_above_source = get_mat(source + ivec2(0, -1));
-        
-        if (state_above_source == Solid || state_above_source == Liquid || material_above_source == Air) break;
-        if (get_gas_move(source, move_x, -move_y, properties[Vapor].dispersion_rate, params.frame_count) != i) break;
+		
+		if (state_above_source == Solid || state_above_source == Liquid || material_above_source == Air) break;
+		if (get_gas_move(source, move_x, -move_y, properties[Vapor].dispersion_rate, params.frame_count) != i) break;
 
-        imageStore(output_grid, coord, imageLoad(input_grid, source));
-        return;
-    }
+		imageStore(output_grid, coord, imageLoad(input_grid, source));
+		return;
+	}
 
 	imageStore(output_grid, coord, current_color);
 }
 
 void update_gas		(ivec2 coord, int move_x, int move_y, vec4 current_color) {
-    ivec2 above = coord + ivec2(0, -1);
-    int state_above = get_state(above);
+	ivec2 above = coord + ivec2(0, -1);
+	int state_above = get_state(above);
 
 	// Rise above Solids
-    if (state_above == Solid) {
-        imageStore(output_grid, coord, imageLoad(input_grid, above));
-        return;
-    }
+	if (state_above == Solid) {
+		imageStore(output_grid, coord, imageLoad(input_grid, above));
+		return;
+	}
 	// Rise above Liquids
 	if (state_above == Liquid && get_state(coord + ivec2(0, -2)) != Solid) {
-        imageStore(output_grid, coord, imageLoad(input_grid, above));
-        return;
-    }
+		imageStore(output_grid, coord, imageLoad(input_grid, above));
+		return;
+	}
 
-    // Rise through Air
-    if (get_mat(above) == Air) {
+	// Rise through Air
+	if (get_mat(above) == Air) {
 		int state_above_above = get_state(coord + ivec2(0, -2));
 
 		bool falling_solid = (state_above_above == Solid);
-        bool falling_liquid = (state_above_above == Liquid && get_state(coord + ivec2(0, -3)) != Solid);
+		bool falling_liquid = (state_above_above == Liquid && get_state(coord + ivec2(0, -3)) != Solid);
 
 		// Do not rise if a Solid or Liquid particle will fall in the target
 		if (!falling_solid && !falling_liquid) {
@@ -327,25 +327,25 @@ void update_gas		(ivec2 coord, int move_x, int move_y, vec4 current_color) {
 			return;
 		} else {
 			imageStore(output_grid, coord, current_color);
-            return;
+			return;
 		}
-    }
+	}
 
 	// Horizontal or diagonal fall
-    int move = get_gas_move(coord, move_x, -move_y, properties[Vapor].dispersion_rate, params.frame_count);
-    if (move > 0) {
+	int move = get_gas_move(coord, move_x, -move_y, properties[Vapor].dispersion_rate, params.frame_count);
+	if (move > 0) {
 		// TODO: Change Air to correct color
-        imageStore(output_grid, coord, material_colors[Air]);
-        return;
-    }    
-    if (shimmer(coord, params.frame_count)) {                    
-        float variance = (hash2t(coord, params.frame_count) - 0.5);
-        vec4 next_color = material_colors[decode(current_color).mat] + vec4(0.0, 0.15*variance, 0.15*variance, 0.0);
-        imageStore(output_grid, coord, next_color);
-        return;
-    }
+		imageStore(output_grid, coord, material_colors[Air]);
+		return;
+	}    
+	if (shimmer(coord, params.frame_count)) {                    
+		float variance = (hash2t(coord, params.frame_count) - 0.5);
+		vec4 next_color = material_colors[decode(current_color).mat] + vec4(0.0, 0.15*variance, 0.15*variance, 0.0);
+		imageStore(output_grid, coord, next_color);
+		return;
+	}
 
-    imageStore(output_grid, coord, current_color);
+	imageStore(output_grid, coord, current_color);
 }
 
 void update(ivec2 coord) {
@@ -563,19 +563,19 @@ int lookup(ivec4 key) {
 }
 
 void swap(inout vec4 a, inout vec4 b) {
-    vec4 tmp = a;
-    a = b;
-    b = tmp;
+	vec4 tmp = a;
+	a = b;
+	b = tmp;
 }
 void swap(inout Particle a, inout Particle b) {
-    Particle tmp = a;
-    a = b;
-    b = tmp;
+	Particle tmp = a;
+	a = b;
+	b = tmp;
 }
 void swap(inout int a, inout int b) {
-    int tmp = a;
-    a = b;
-    b = tmp;
+	int tmp = a;
+	a = b;
+	b = tmp;
 }
 
 void update_marg(ivec2 coord) {

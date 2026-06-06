@@ -64,10 +64,10 @@ func _ready():
 
 	print("Ready!")
 	
-func create_texture() -> RID:
+func create_texture(w: int = WIDTH, h: int = HEIGHT) -> RID:
 	var format = RDTextureFormat.new()
-	format.width = WIDTH
-	format.height = HEIGHT
+	format.width = w
+	format.height = h
 	format.format = RenderingDevice.DATA_FORMAT_R32G32B32A32_SFLOAT
 	format.usage_bits = RenderingDevice.TEXTURE_USAGE_STORAGE_BIT | \
 						RenderingDevice.TEXTURE_USAGE_CAN_UPDATE_BIT | \
@@ -253,7 +253,6 @@ func _process(_delta: float) -> void:
 	if not rd or not pipeline.is_valid():
 		return
 	
-	
 	for i in range(4):
 		total_frames += 1
 		
@@ -293,12 +292,12 @@ func _process(_delta: float) -> void:
 	tex_rd.texture_rd_rid = textures[current_texture_index]
 	texture = tex_rd
 	
-	if total_frames % 30 == 0:
-		var counts = read_counters()
-		$CanvasLayer/Counters/SandCounter.text = "%d" % counts[0]
-		$CanvasLayer/Counters/RockCounter.text = "%d" % counts[1]
-		$CanvasLayer/Counters/WaterCounter.text = "%d" % counts[2]
-		$CanvasLayer/Counters/VaporCounter.text = "%d" % counts[3]
+	#if total_frames % 30 == 0:
+		#var counts = read_counters()
+		#$CanvasLayer/Counters/SandCounter.text = "%d" % counts[0]
+		#$CanvasLayer/Counters/RockCounter.text = "%d" % counts[1]
+		#$CanvasLayer/Counters/WaterCounter.text = "%d" % counts[2]
+		#$CanvasLayer/Counters/VaporCounter.text = "%d" % counts[3]
 
 func select(x: int) -> void:
 	selected_material = x
@@ -325,21 +324,74 @@ func refresh_dropdown() -> void:
 
 #---------------PRESETS--------------------------------#
 
-func save_texture(texture_rid: RID, path: String) -> void:
-	var raw = rd.texture_get_data(texture_rid, 0)
+func color_to_material(col: Color) -> int:
+	var color = Vector4(col.r, col.g, col.b, col.a)
+	var best_dist = INF
+	var best_mat  = AIR
+	for i in range(MATERIAL_COLORS.size()):
+		var c = MATERIAL_COLORS[i]
+		var target_color = Vector4(c.r, c.g, c.b, c.a)
+		var d = color.distance_squared_to(target_color)
+		if d < best_dist:
+			best_dist = d
+			best_mat  = i
+	return best_mat
+
+func save_texture(path: String) -> void:
+	var raw = rd.texture_get_data(textures[current_texture_index], 0)
+	var bytes = raw.to_float32_array()
+	
 	var file = FileAccess.open(path, FileAccess.WRITE)
-	file.store_buffer(raw)
+	file.store_32(WIDTH)
+	file.store_32(HEIGHT)
+	
+	for y in range(HEIGHT):
+		for x in range(WIDTH):
+			var idx = (y * WIDTH + x) * 4
+			var pixel = Color(bytes[idx], bytes[idx+1], bytes[idx+2], bytes[idx+3])
+			var mat   = color_to_material(pixel)
+			file.store_8(mat)
+			
 	file.close()
 	print("Saved to ", path)
 	
-func load_texture(texture_rid: RID, path: String) -> void:
+func load_texture(path: String, target_w: int = WIDTH, target_h: int = HEIGHT) -> void:
 	if not FileAccess.file_exists(path):
 		printerr("File not found: ", path)
 		return
+		
 	var file = FileAccess.open(path, FileAccess.READ)
-	var raw = file.get_buffer(file.get_length())
+	var src_w = file.get_32()
+	var src_h = file.get_32()
+	
+	var materials = PackedByteArray()
+	materials.resize(src_w * src_h)
+	for i in range(src_w * src_h):
+		materials[i] = file.get_8()
 	file.close()
-	rd.texture_update(texture_rid, 0, raw)
+	
+	var data = PackedFloat32Array()
+	data.resize(target_w * target_h * 4)
+	
+	for y in range(target_h):
+		for x in range(target_w):
+			var variance = randf() - 0.5
+			var src_x = int(float(x) / target_w * src_w)
+			var src_y = int(float(y) / target_h * src_h)
+			src_x     = clamp(src_x, 0, src_w - 1)
+			src_y     = clamp(src_y, 0, src_h - 1)
+			
+			var mat   = materials[src_y * src_w + src_x]
+			var col   = draw(mat, variance)
+			var idx   = (y * target_w + x) * 4
+			
+			data[idx]     = col.r
+			data[idx + 1] = col.g
+			data[idx + 2] = col.b
+			data[idx + 3] = col.a
+	
+	rd.texture_update(textures[0], 0, data.to_byte_array())
+	rd.texture_update(textures[1], 0, data.to_byte_array())
 	print("Loaded from ", path)
 
 func preset_selector(index: int) -> void:
@@ -348,13 +400,12 @@ func preset_selector(index: int) -> void:
 		printerr("Nothing selected")
 		return
 		
-	load_texture(textures[0],"res://presets/%s.bin" % selected)
-	load_texture(textures[1],"res://presets/%s.bin" % selected)
+	load_texture("res://presets/%s.bin" % selected)
 
 func save_button() -> void:
 	var filename = $CanvasLayer/Presets/Name.text.strip_edges()
 	if filename == "":
 		printerr("No filename entered")
 		return
-	save_texture(textures[current_texture_index], "res://presets/%s.bin" % filename)
+	save_texture("res://presets/%s.bin" % filename)
 	refresh_dropdown()

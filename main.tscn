@@ -143,12 +143,12 @@ placeholder_text = "Enter filename..."
 layout_mode = 2
 text = "Save"
 
-[connection signal="pressed" from="TextureRect/CanvasLayer/RightHBoxContainer/AirButton" 	to="TextureRect" method="select" binds= [0]]
-[connection signal="pressed" from="TextureRect/CanvasLayer/RightHBoxContainer/SandButton" 	to="TextureRect" method="select" binds= [1]]
-[connection signal="pressed" from="TextureRect/CanvasLayer/RightHBoxContainer/WaterButton" 	to="TextureRect" method="select" binds= [2]]
-[connection signal="pressed" from="TextureRect/CanvasLayer/RightHBoxContainer/RockButton" 	to="TextureRect" method="select" binds= [3]]
-[connection signal="pressed" from="TextureRect/CanvasLayer/RightHBoxContainer/VaporButton" 	to="TextureRect" method="select" binds= [4]]
-[connection signal="pressed" from="TextureRect/CanvasLayer/BrushStuff/+" to="TextureRect" method="change_brush_size" binds= [ 1]]
+[connection signal="pressed" from="TextureRect/CanvasLayer/RightHBoxContainer/SandButton" to="TextureRect" method="select" binds= [1]]
+[connection signal="pressed" from="TextureRect/CanvasLayer/RightHBoxContainer/RockButton" to="TextureRect" method="select" binds= [3]]
+[connection signal="pressed" from="TextureRect/CanvasLayer/RightHBoxContainer/WaterButton" to="TextureRect" method="select" binds= [2]]
+[connection signal="pressed" from="TextureRect/CanvasLayer/RightHBoxContainer/VaporButton" to="TextureRect" method="select" binds= [4]]
+[connection signal="pressed" from="TextureRect/CanvasLayer/RightHBoxContainer/AirButton" to="TextureRect" method="select" binds= [0]]
+[connection signal="pressed" from="TextureRect/CanvasLayer/BrushStuff/+" to="TextureRect" method="change_brush_size" binds= [1]]
 [connection signal="pressed" from="TextureRect/CanvasLayer/BrushStuff/-" to="TextureRect" method="change_brush_size" binds= [-1]]
 [connection signal="item_selected" from="TextureRect/CanvasLayer/Presets/PresetsList" to="TextureRect" method="preset_selector"]
 [connection signal="pressed" from="TextureRect/CanvasLayer/Presets/Save" to="TextureRect" method="save_button"]
