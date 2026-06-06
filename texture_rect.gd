@@ -276,11 +276,11 @@ func _process(_delta: float) -> void:
 	if not rd or not pipeline.is_valid():
 		return
 	
-	if not testing_performance:
-		rd.buffer_clear(counter_buffer, 0, 16)
-	
 	for i in range(4):
 		total_frames += 1
+		
+		if not testing_performance:
+			rd.buffer_clear(counter_buffer, 0, 16)
 		
 		var input_idx = current_texture_index
 		var output_idx = 1 - current_texture_index
