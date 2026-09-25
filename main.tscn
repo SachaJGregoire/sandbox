@@ -1,0 +1,154 @@
+[gd_scene format=3 uid="uid://5tbslyfhm3ub"]
+
+[ext_resource type="Script" uid="uid://cuqv51jdjtgag" path="res://texture_rect.gd" id="1_ig7tw"]
+
+[node name="Control" type="Control" unique_id=297003587]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="TextureRect" type="TextureRect" parent="." unique_id=1976369985]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 1.0
+offset_top = 2.0
+offset_right = 1.0
+offset_bottom = 2.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_ig7tw")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="TextureRect" unique_id=665484866]
+
+[node name="RightHBoxContainer" type="HBoxContainer" parent="TextureRect/CanvasLayer" unique_id=1491535583]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -425.0
+offset_top = 10.0
+offset_right = -9.0
+offset_bottom = 60.0
+grow_horizontal = 0
+
+[node name="SandButton" type="Button" parent="TextureRect/CanvasLayer/RightHBoxContainer" unique_id=2088457241]
+custom_minimum_size = Vector2(80, 30)
+layout_mode = 2
+size_flags_stretch_ratio = 0.0
+theme_override_font_sizes/font_size = 17
+text = "Sand"
+
+[node name="RockButton" type="Button" parent="TextureRect/CanvasLayer/RightHBoxContainer" unique_id=1282805812]
+custom_minimum_size = Vector2(80, 30)
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+text = "Rock"
+
+[node name="WaterButton" type="Button" parent="TextureRect/CanvasLayer/RightHBoxContainer" unique_id=1224822898]
+custom_minimum_size = Vector2(80, 30)
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+text = "Water"
+
+[node name="VaporButton" type="Button" parent="TextureRect/CanvasLayer/RightHBoxContainer" unique_id=1593401647]
+custom_minimum_size = Vector2(80, 30)
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+text = "Vapor"
+
+[node name="AirButton" type="Button" parent="TextureRect/CanvasLayer/RightHBoxContainer" unique_id=1844384132]
+custom_minimum_size = Vector2(80, 30)
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+text = "Air"
+
+[node name="BrushStuff" type="VBoxContainer" parent="TextureRect/CanvasLayer" unique_id=1659679079]
+offset_left = 357.0
+offset_top = 25.0
+offset_right = 463.0
+offset_bottom = 120.0
+
+[node name="BrushSize" type="Label" parent="TextureRect/CanvasLayer/BrushStuff" unique_id=963681854]
+layout_mode = 2
+text = "Brush size: 10"
+
+[node name="+" type="Button" parent="TextureRect/CanvasLayer/BrushStuff" unique_id=3208244]
+layout_mode = 2
+size_flags_stretch_ratio = 0.0
+theme_override_font_sizes/font_size = 17
+text = "+"
+
+[node name="-" type="Button" parent="TextureRect/CanvasLayer/BrushStuff" unique_id=2033274631]
+layout_mode = 2
+size_flags_stretch_ratio = 0.0
+theme_override_font_sizes/font_size = 17
+text = "-"
+
+[node name="Counters" type="HBoxContainer" parent="TextureRect/CanvasLayer" unique_id=1278594361]
+offset_left = 487.0
+offset_top = 60.0
+offset_right = 1087.0
+offset_bottom = 110.0
+
+[node name="SandCounter" type="Label" parent="TextureRect/CanvasLayer/Counters" unique_id=103942938]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+
+[node name="RockCounter" type="Label" parent="TextureRect/CanvasLayer/Counters" unique_id=1767088428]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+
+[node name="WaterCounter" type="Label" parent="TextureRect/CanvasLayer/Counters" unique_id=293309223]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+
+[node name="VaporCounter" type="Label" parent="TextureRect/CanvasLayer/Counters" unique_id=1229051009]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+
+[node name="Status" type="VBoxContainer" parent="TextureRect/CanvasLayer" unique_id=1244601840]
+offset_left = 10.0
+offset_top = 845.0
+offset_right = 166.0
+offset_bottom = 922.0
+
+[node name="Simulation" type="Label" parent="TextureRect/CanvasLayer/Status" unique_id=184560283]
+layout_mode = 2
+text = "Simulation: Frozen"
+
+[node name="CurrentSelected" type="Label" parent="TextureRect/CanvasLayer/Status" unique_id=1933685055]
+layout_mode = 2
+text = "Selected: Sand"
+
+[node name="Presets" type="VBoxContainer" parent="TextureRect/CanvasLayer" unique_id=1929278501]
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 210.0
+offset_bottom = 138.0
+
+[node name="PresetsList" type="OptionButton" parent="TextureRect/CanvasLayer/Presets" unique_id=529637101]
+layout_mode = 2
+
+[node name="Name" type="LineEdit" parent="TextureRect/CanvasLayer/Presets" unique_id=1698447776]
+layout_mode = 2
+placeholder_text = "Enter filename..."
+
+[node name="Save" type="Button" parent="TextureRect/CanvasLayer/Presets" unique_id=154421570]
+layout_mode = 2
+text = "Save"
+
+[connection signal="pressed" from="TextureRect/CanvasLayer/RightHBoxContainer/SandButton" to="TextureRect" method="select" binds= [1]]
+[connection signal="pressed" from="TextureRect/CanvasLayer/RightHBoxContainer/RockButton" to="TextureRect" method="select" binds= [3]]
+[connection signal="pressed" from="TextureRect/CanvasLayer/RightHBoxContainer/WaterButton" to="TextureRect" method="select" binds= [2]]
+[connection signal="pressed" from="TextureRect/CanvasLayer/RightHBoxContainer/VaporButton" to="TextureRect" method="select" binds= [4]]
+[connection signal="pressed" from="TextureRect/CanvasLayer/RightHBoxContainer/AirButton" to="TextureRect" method="select" binds= [0]]
+[connection signal="pressed" from="TextureRect/CanvasLayer/BrushStuff/+" to="TextureRect" method="change_brush_size" binds= [1]]
+[connection signal="pressed" from="TextureRect/CanvasLayer/BrushStuff/-" to="TextureRect" method="change_brush_size" binds= [-1]]
+[connection signal="item_selected" from="TextureRect/CanvasLayer/Presets/PresetsList" to="TextureRect" method="preset_selector"]
+[connection signal="pressed" from="TextureRect/CanvasLayer/Presets/Save" to="TextureRect" method="save_button"]
