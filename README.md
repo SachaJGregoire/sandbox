@@ -6,7 +6,7 @@
 4. Open the project with project.godot
 5. Run the simulation
 
-If the project is not build:
+If the project is not built:
 1. In the sandbox folder run: scons platform=windows or scons platform=linux, depending on the OS
 2. Run Godot
 3. Open the project
